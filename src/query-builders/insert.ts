@@ -1,7 +1,11 @@
 import { entityKind, is } from "drizzle-orm/entity";
 import { QueryPromise } from "drizzle-orm/query-promise";
 import { Param, SQL } from "drizzle-orm/sql";
+import { Subquery } from "drizzle-orm/subquery";
 import { Table } from "drizzle-orm/table";
+import { haveSameKeys } from "drizzle-orm/utils";
+
+import { DatabricksQueryBuilder } from "./query-builder";
 
 import type { DatabricksDialect } from "../dialect";
 import type { DatabricksSession } from "../session";
@@ -16,6 +20,7 @@ export class DatabricksInsertBuilder<TTable extends DatabricksTable<any>> {
     private table: TTable,
     private session: DatabricksSession,
     private dialect: DatabricksDialect,
+    private withList?: Subquery[],
   ) {}
 
   values(values: Record<string, unknown> | Record<string, unknown>[]) {
@@ -34,7 +39,42 @@ export class DatabricksInsertBuilder<TTable extends DatabricksTable<any>> {
       return result;
     });
 
-    return new DatabricksInsertBase(this.table, mappedValues, this.session, this.dialect);
+    return new DatabricksInsertBase(
+      this.table,
+      mappedValues,
+      this.session,
+      this.dialect,
+      false,
+      this.withList,
+    );
+  }
+
+  select(
+    selectQuery:
+      | ((qb: DatabricksQueryBuilder) => SQL | { _: { selectedFields: Record<string, unknown> } })
+      | SQL
+      | { _: { selectedFields: Record<string, unknown> } },
+  ) {
+    const select =
+      typeof selectQuery === "function"
+        ? selectQuery(new DatabricksQueryBuilder(this.dialect))
+        : selectQuery;
+    if (
+      !is(select, SQL) &&
+      !haveSameKeys((this.table as any)[TableSymbol.Columns], (select as any)._.selectedFields)
+    ) {
+      throw new Error(
+        "Insert select error: selected fields are not the same or are in a different order compared to the table definition",
+      );
+    }
+    return new DatabricksInsertBase(
+      this.table,
+      select as any,
+      this.session,
+      this.dialect,
+      true,
+      this.withList,
+    );
   }
 }
 
@@ -46,6 +86,7 @@ export class DatabricksInsertBase<TTable extends DatabricksTable<any>> extends Q
     values: Record<string, SQL | Param>[] | SQL;
     select?: boolean;
     onConflict?: SQL;
+    withList?: Subquery[];
   };
 
   constructor(
@@ -54,9 +95,10 @@ export class DatabricksInsertBase<TTable extends DatabricksTable<any>> extends Q
     private session: DatabricksSession,
     private dialect: DatabricksDialect,
     select?: boolean,
+    withList?: Subquery[],
   ) {
     super();
-    this.config = { table, values, select };
+    this.config = { table, values, select, withList };
   }
 
   /** @internal */

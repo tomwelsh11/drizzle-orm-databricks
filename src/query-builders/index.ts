@@ -7,3 +7,4 @@ export { union, unionAll, intersect, intersectAll, except, exceptAll } from "./s
 export { DatabricksInsertBuilder, DatabricksInsertBase } from "./insert";
 export { DatabricksUpdateBuilder, DatabricksUpdateBase } from "./update";
 export { DatabricksDeleteBase } from "./delete";
+export { DatabricksQueryBuilder } from "./query-builder";
