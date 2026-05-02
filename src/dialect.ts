@@ -176,7 +176,7 @@ export class DatabricksDialect {
     having?: SQL;
     table: Table | Subquery | SQL | View;
     joins?: Array<{
-      on: SQL;
+      on?: SQL;
       table: Table | Subquery | SQL | View;
       joinType: string;
       alias?: string;
@@ -253,13 +253,15 @@ export class DatabricksDialect {
         const table2 = joinMeta.table;
         const lateralSql = joinMeta.lateral ? sql` lateral` : undefined;
 
+        const onClause = joinMeta.on ? sql` on ${joinMeta.on}` : undefined;
+
         if (is(table2, Table)) {
           const tableName = (table2 as any)[TableSymbol.Name] as string;
           const tableSchema = (table2 as any)[TableSymbol.Schema] as string | undefined;
           const origTableName = (table2 as any)[TableSymbol.OriginalName] as string;
           const alias = tableName === origTableName ? undefined : joinMeta.alias;
           joinsArray.push(
-            sql`${sql.raw(joinMeta.joinType)} join${lateralSql} ${tableSchema ? sql`${sql.identifier(tableSchema)}.` : undefined}${sql.identifier(origTableName)}${alias && sql` ${sql.identifier(alias)}`} on ${joinMeta.on}`,
+            sql`${sql.raw(joinMeta.joinType)} join${lateralSql} ${tableSchema ? sql`${sql.identifier(tableSchema)}.` : undefined}${sql.identifier(origTableName)}${alias && sql` ${sql.identifier(alias)}`}${onClause}`,
           );
         } else if (is(table2, View)) {
           const viewName = (table2 as any)[ViewBaseConfig].name as string;
@@ -267,11 +269,11 @@ export class DatabricksDialect {
           const origViewName = (table2 as any)[ViewBaseConfig].originalName as string;
           const alias = viewName === origViewName ? undefined : joinMeta.alias;
           joinsArray.push(
-            sql`${sql.raw(joinMeta.joinType)} join${lateralSql} ${viewSchema ? sql`${sql.identifier(viewSchema)}.` : undefined}${sql.identifier(origViewName)}${alias && sql` ${sql.identifier(alias)}`} on ${joinMeta.on}`,
+            sql`${sql.raw(joinMeta.joinType)} join${lateralSql} ${viewSchema ? sql`${sql.identifier(viewSchema)}.` : undefined}${sql.identifier(origViewName)}${alias && sql` ${sql.identifier(alias)}`}${onClause}`,
           );
         } else {
           joinsArray.push(
-            sql`${sql.raw(joinMeta.joinType)} join${lateralSql} ${table2 as unknown as SQL} on ${joinMeta.on}`,
+            sql`${sql.raw(joinMeta.joinType)} join${lateralSql} ${table2 as unknown as SQL}${onClause}`,
           );
         }
 

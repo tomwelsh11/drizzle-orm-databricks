@@ -58,6 +58,36 @@ describe("Dialect advanced SQL generation", () => {
     });
   });
 
+  describe("CROSS JOIN", () => {
+    it("generates CROSS JOIN without ON clause", async () => {
+      const { db, mockClient } = createDb();
+      await db.select().from(users).crossJoin(posts);
+      const s = mockClient.recorded[0]!.sql;
+      expect(s).toContain("cross join `posts`");
+      expect(s).not.toMatch(/cross join `posts` on /);
+    });
+
+    it("aliases columns in CROSS JOIN like other joins", async () => {
+      const { db, mockClient } = createDb();
+      await db.select().from(users).crossJoin(posts);
+      const s = mockClient.recorded[0]!.sql;
+      expect(s).toContain("`users`.`id` as `users__id`");
+      expect(s).toContain("`posts`.`id` as `posts__id`");
+    });
+
+    it("CROSS JOIN with partial select", async () => {
+      const { db, mockClient } = createDb();
+      await db
+        .select({ userName: users.name, postTitle: posts.title })
+        .from(users)
+        .crossJoin(posts);
+      const s = mockClient.recorded[0]!.sql;
+      expect(s).toContain("cross join `posts`");
+      expect(s).toContain("`users`.`name`");
+      expect(s).toContain("`posts`.`title`");
+    });
+  });
+
   describe("buildLimit edge cases", () => {
     it("limit(0) generates LIMIT 0", async () => {
       const { db, mockClient } = createDb();

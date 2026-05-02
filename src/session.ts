@@ -1,5 +1,6 @@
 import { Column } from "drizzle-orm/column";
 import { entityKind, is } from "drizzle-orm/entity";
+import { DrizzleQueryError } from "drizzle-orm/errors";
 import type { Logger } from "drizzle-orm/logger";
 import { NoopLogger } from "drizzle-orm/logger";
 import { fillPlaceholders, SQL, type Query } from "drizzle-orm/sql";
@@ -98,21 +99,25 @@ export class DatabricksPreparedQuery {
   }
 
   private async runStatement(sqlText: string, params: unknown[]): Promise<unknown[]> {
-    return this.connection.runWithRetry(async (session) => {
-      const op = await session.executeStatement(sqlText, {
-        ordinalParameters: params as never,
-      });
-      try {
-        const result = await op.fetchAll();
-        return (result ?? []) as unknown[];
-      } finally {
+    try {
+      return await this.connection.runWithRetry(async (session) => {
+        const op = await session.executeStatement(sqlText, {
+          ordinalParameters: params as never,
+        });
         try {
-          await op.close();
-        } catch {
-          // best-effort
+          const result = await op.fetchAll();
+          return (result ?? []) as unknown[];
+        } finally {
+          try {
+            await op.close();
+          } catch {
+            // best-effort
+          }
         }
-      }
-    });
+      });
+    } catch (e) {
+      throw new DrizzleQueryError(sqlText, params as any[], e as Error);
+    }
   }
 }
 
@@ -147,21 +152,25 @@ export class DatabricksSession {
   async execute<T = unknown>(query: SQL): Promise<T> {
     const compiled = this.dialect.sqlToQuery(query);
     this.logger.logQuery(compiled.sql, compiled.params);
-    const rows = await this.connection.runWithRetry(async (session) => {
-      const op = await session.executeStatement(compiled.sql, {
-        ordinalParameters: compiled.params as never,
-      });
-      try {
-        return (await op.fetchAll()) ?? [];
-      } finally {
+    try {
+      const rows = await this.connection.runWithRetry(async (session) => {
+        const op = await session.executeStatement(compiled.sql, {
+          ordinalParameters: compiled.params as never,
+        });
         try {
-          await op.close();
-        } catch {
-          // best-effort
+          return (await op.fetchAll()) ?? [];
+        } finally {
+          try {
+            await op.close();
+          } catch {
+            // best-effort
+          }
         }
-      }
-    });
-    return rows as T;
+      });
+      return rows as T;
+    } catch (e) {
+      throw new DrizzleQueryError(compiled.sql, compiled.params as any[], e as Error);
+    }
   }
 
   async all<T = unknown>(query: SQL): Promise<T[]> {
