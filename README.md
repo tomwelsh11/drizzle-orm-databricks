@@ -259,9 +259,9 @@ Note: `DATABRICKS_HOST` is the hostname only — no `https://` prefix.
 | ----------------- | -------- |
 | `drizzle-orm`     | `>=0.45` |
 | `@databricks/sql` | `>=1.8`  |
-| Node.js           | `>=18`   |
+| Node.js           | `>=22`   |
 
-Tested on Node 18, 20, 22, and 24.
+Tested on Node 22 and 24.
 
 ### What works
 
