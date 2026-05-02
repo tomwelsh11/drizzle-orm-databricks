@@ -1,4 +1,4 @@
-import type { DBSQLClient } from '@databricks/sql';
+import type { DBSQLClient } from "@databricks/sql";
 
 export interface DatabricksTokenConnectionConfig {
   host: string;
@@ -17,7 +17,9 @@ export interface DatabricksOAuthConnectionConfig {
   schema?: string;
 }
 
-export type DatabricksConnectionConfig = DatabricksTokenConnectionConfig | DatabricksOAuthConnectionConfig;
+export type DatabricksConnectionConfig =
+  | DatabricksTokenConnectionConfig
+  | DatabricksOAuthConnectionConfig;
 
 export interface DatabricksClientConfig {
   client: DBSQLClient;
@@ -28,9 +30,11 @@ export interface DatabricksClientConfig {
 export type DatabricksConfig = DatabricksConnectionConfig | DatabricksClientConfig;
 
 export function isClientConfig(config: DatabricksConfig): config is DatabricksClientConfig {
-  return 'client' in config;
+  return "client" in config;
 }
 
-export function isOAuthConfig(config: DatabricksConnectionConfig): config is DatabricksOAuthConnectionConfig {
-  return 'clientId' in config;
+export function isOAuthConfig(
+  config: DatabricksConnectionConfig,
+): config is DatabricksOAuthConnectionConfig {
+  return "clientId" in config;
 }

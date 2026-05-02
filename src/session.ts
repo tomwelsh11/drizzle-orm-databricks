@@ -1,12 +1,12 @@
-import { Column } from 'drizzle-orm/column';
-import { entityKind, is } from 'drizzle-orm/entity';
-import type { Logger } from 'drizzle-orm/logger';
-import { NoopLogger } from 'drizzle-orm/logger';
-import { fillPlaceholders, SQL, type Query } from 'drizzle-orm/sql';
+import { Column } from "drizzle-orm/column";
+import { entityKind, is } from "drizzle-orm/entity";
+import type { Logger } from "drizzle-orm/logger";
+import { NoopLogger } from "drizzle-orm/logger";
+import { fillPlaceholders, SQL, type Query } from "drizzle-orm/sql";
 
-import type { SessionManager } from './connection';
-import type { DatabricksDialect } from './dialect';
-import { DatabricksUnsupportedError } from './errors';
+import type { SessionManager } from "./connection";
+import type { DatabricksDialect } from "./dialect";
+import { DatabricksUnsupportedError } from "./errors";
 
 type FieldMapping = {
   path: string[];
@@ -60,7 +60,7 @@ export interface DatabricksSessionOptions {
 }
 
 export class DatabricksPreparedQuery {
-  static readonly [entityKind]: string = 'DatabricksPreparedQuery';
+  static readonly [entityKind]: string = "DatabricksPreparedQuery";
 
   constructor(
     private connection: SessionManager,
@@ -71,9 +71,7 @@ export class DatabricksPreparedQuery {
     private customResultMapper?: (rows: unknown[][]) => unknown,
   ) {}
 
-  async execute(
-    placeholderValues: Record<string, unknown> | undefined = {},
-  ): Promise<unknown> {
+  async execute(placeholderValues: Record<string, unknown> | undefined = {}): Promise<unknown> {
     const params = fillPlaceholders(this.params, placeholderValues);
     const { fields, queryString, logger, customResultMapper } = this;
 
@@ -89,15 +87,13 @@ export class DatabricksPreparedQuery {
       return customResultMapper(rows as unknown[][]);
     }
 
-    return (rows as unknown[][]).map((row) =>
-      mapResultRow(fields!, row),
-    );
+    return (rows as unknown[][]).map((row) => mapResultRow(fields!, row));
   }
 
   iterator(_placeholderValues?: Record<string, unknown>): AsyncGenerator<unknown> {
     throw new DatabricksUnsupportedError(
-      'Streaming iteration',
-      'Use execute() to fetch results as a single batch.',
+      "Streaming iteration",
+      "Use execute() to fetch results as a single batch.",
     );
   }
 
@@ -121,7 +117,7 @@ export class DatabricksPreparedQuery {
 }
 
 export class DatabricksSession {
-  static readonly [entityKind]: string = 'DatabricksSession';
+  static readonly [entityKind]: string = "DatabricksSession";
 
   private logger: Logger;
 
@@ -172,12 +168,10 @@ export class DatabricksSession {
     return this.execute<T[]>(query);
   }
 
-  async transaction<T>(
-    _transaction: () => Promise<T>,
-  ): Promise<T> {
+  async transaction<T>(_transaction: () => Promise<T>): Promise<T> {
     throw new DatabricksUnsupportedError(
-      'Transactions',
-      'Databricks does not support multi-statement transactions in this adapter. Use single statements or MERGE for atomic multi-row writes.',
+      "Transactions",
+      "Databricks does not support multi-statement transactions in this adapter. Use single statements or MERGE for atomic multi-row writes.",
     );
   }
 }

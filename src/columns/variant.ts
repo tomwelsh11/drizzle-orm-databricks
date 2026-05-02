@@ -1,16 +1,16 @@
-import type { ColumnBaseConfig } from 'drizzle-orm/column';
-import type { ColumnBuilderBaseConfig } from 'drizzle-orm/column-builder';
-import { entityKind } from 'drizzle-orm/entity';
-import type { Table } from 'drizzle-orm/table';
-import { DatabricksColumn, DatabricksColumnBuilder } from './common';
+import type { ColumnBaseConfig } from "drizzle-orm/column";
+import type { ColumnBuilderBaseConfig } from "drizzle-orm/column-builder";
+import { entityKind } from "drizzle-orm/entity";
+import type { Table } from "drizzle-orm/table";
+import { DatabricksColumn, DatabricksColumnBuilder } from "./common";
 
 export class DatabricksVariantBuilder extends DatabricksColumnBuilder<
-  ColumnBuilderBaseConfig<'json', 'DatabricksVariant'>
+  ColumnBuilderBaseConfig<"json", "DatabricksVariant">
 > {
-  static override readonly [entityKind] = 'DatabricksVariantBuilder';
+  static override readonly [entityKind] = "DatabricksVariantBuilder";
 
   constructor(name: string) {
-    super(name, 'json', 'DatabricksVariant');
+    super(name, "json", "DatabricksVariant");
   }
 
   override build(table: Table): DatabricksVariant {
@@ -19,16 +19,16 @@ export class DatabricksVariantBuilder extends DatabricksColumnBuilder<
 }
 
 export class DatabricksVariant extends DatabricksColumn<
-  ColumnBaseConfig<'json', 'DatabricksVariant'>
+  ColumnBaseConfig<"json", "DatabricksVariant">
 > {
-  static override readonly [entityKind] = 'DatabricksVariant';
+  static override readonly [entityKind] = "DatabricksVariant";
 
   getSQLType(): string {
-    return 'VARIANT';
+    return "VARIANT";
   }
 
   override mapFromDriverValue(value: unknown): unknown {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       try {
         return JSON.parse(value);
       } catch {
@@ -39,12 +39,12 @@ export class DatabricksVariant extends DatabricksColumn<
   }
 
   override mapToDriverValue(value: unknown): string {
-    return typeof value === 'string' ? value : JSON.stringify(value);
+    return typeof value === "string" ? value : JSON.stringify(value);
   }
 }
 
 export function variant(): DatabricksVariantBuilder;
 export function variant(name: string): DatabricksVariantBuilder;
 export function variant(name?: string): DatabricksVariantBuilder {
-  return new DatabricksVariantBuilder(name ?? '');
+  return new DatabricksVariantBuilder(name ?? "");
 }

@@ -1,16 +1,16 @@
-import type { ColumnBaseConfig } from 'drizzle-orm/column';
-import type { ColumnBuilderBaseConfig } from 'drizzle-orm/column-builder';
-import { entityKind } from 'drizzle-orm/entity';
-import type { Table } from 'drizzle-orm/table';
-import { DatabricksColumn, DatabricksColumnBuilder } from './common';
+import type { ColumnBaseConfig } from "drizzle-orm/column";
+import type { ColumnBuilderBaseConfig } from "drizzle-orm/column-builder";
+import { entityKind } from "drizzle-orm/entity";
+import type { Table } from "drizzle-orm/table";
+import { DatabricksColumn, DatabricksColumnBuilder } from "./common";
 
 export class DatabricksDoubleBuilder extends DatabricksColumnBuilder<
-  ColumnBuilderBaseConfig<'number', 'DatabricksDouble'>
+  ColumnBuilderBaseConfig<"number", "DatabricksDouble">
 > {
-  static override readonly [entityKind] = 'DatabricksDoubleBuilder';
+  static override readonly [entityKind] = "DatabricksDoubleBuilder";
 
   constructor(name: string) {
-    super(name, 'number', 'DatabricksDouble');
+    super(name, "number", "DatabricksDouble");
   }
 
   override build(table: Table): DatabricksDouble {
@@ -19,17 +19,17 @@ export class DatabricksDoubleBuilder extends DatabricksColumnBuilder<
 }
 
 export class DatabricksDouble extends DatabricksColumn<
-  ColumnBaseConfig<'number', 'DatabricksDouble'>
+  ColumnBaseConfig<"number", "DatabricksDouble">
 > {
-  static override readonly [entityKind] = 'DatabricksDouble';
+  static override readonly [entityKind] = "DatabricksDouble";
 
   getSQLType(): string {
-    return 'DOUBLE';
+    return "DOUBLE";
   }
 }
 
 export function double(): DatabricksDoubleBuilder;
 export function double(name: string): DatabricksDoubleBuilder;
 export function double(name?: string): DatabricksDoubleBuilder {
-  return new DatabricksDoubleBuilder(name ?? '');
+  return new DatabricksDoubleBuilder(name ?? "");
 }

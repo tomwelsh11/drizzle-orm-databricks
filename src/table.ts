@@ -1,21 +1,21 @@
-import type { BuildColumns } from 'drizzle-orm/column-builder';
-import { entityKind } from 'drizzle-orm/entity';
-import { Table, type TableConfig } from 'drizzle-orm/table';
-import type { DatabricksColumn, DatabricksColumnBuilder } from './columns/common';
+import type { BuildColumns } from "drizzle-orm/column-builder";
+import { entityKind } from "drizzle-orm/entity";
+import { Table, type TableConfig } from "drizzle-orm/table";
+import type { DatabricksColumn, DatabricksColumnBuilder } from "./columns/common";
 
-const ColumnsSymbol = Symbol.for('drizzle:Columns');
-const ExtraConfigColumnsSymbol = Symbol.for('drizzle:ExtraConfigColumns');
+const ColumnsSymbol = Symbol.for("drizzle:Columns");
+const ExtraConfigColumnsSymbol = Symbol.for("drizzle:ExtraConfigColumns");
 
 export type DatabricksTableConfig = TableConfig<DatabricksColumn>;
 
 export class DatabricksTable<T extends TableConfig = TableConfig> extends Table<T> {
-  static override readonly [entityKind]: string = 'DatabricksTable';
+  static override readonly [entityKind]: string = "DatabricksTable";
 
-  declare protected $columns: T['columns'];
+  declare protected $columns: T["columns"];
 }
 
 export type DatabricksTableWithColumns<T extends TableConfig> = DatabricksTable<T> & {
-  [Key in keyof T['columns']]: T['columns'][Key];
+  [Key in keyof T["columns"]]: T["columns"][Key];
 };
 
 export function databricksTable<
@@ -27,8 +27,8 @@ export function databricksTable<
 ): DatabricksTableWithColumns<{
   name: TTableName;
   schema: undefined;
-  columns: BuildColumns<TTableName, TColumnsMap, 'common'>;
-  dialect: 'common';
+  columns: BuildColumns<TTableName, TColumnsMap, "common">;
+  dialect: "common";
 }> {
   const rawTable = new DatabricksTable(name, undefined, name);
   const builtColumns = Object.fromEntries(
@@ -46,17 +46,14 @@ export function databricksTable<
 
 export interface DatabricksSchema<TSchemaName extends string> {
   schemaName: TSchemaName;
-  table: <
-    TTableName extends string,
-    TColumnsMap extends Record<string, DatabricksColumnBuilder>,
-  >(
+  table: <TTableName extends string, TColumnsMap extends Record<string, DatabricksColumnBuilder>>(
     name: TTableName,
     columns: TColumnsMap,
   ) => DatabricksTableWithColumns<{
     name: TTableName;
     schema: TSchemaName;
-    columns: BuildColumns<TTableName, TColumnsMap, 'common'>;
-    dialect: 'common';
+    columns: BuildColumns<TTableName, TColumnsMap, "common">;
+    dialect: "common";
   }>;
 }
 

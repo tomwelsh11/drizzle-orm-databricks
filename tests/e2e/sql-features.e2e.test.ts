@@ -1,12 +1,12 @@
-import { sql } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { sql } from "drizzle-orm";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { closeDb, dropTable, getDb, hasCredentials } from './helpers';
+import { closeDb, dropTable, getDb, hasCredentials } from "./helpers";
 
-const bt = (n: string) => '`' + n + '`';
+const bt = (n: string) => "`" + n + "`";
 
-describe.skipIf(!hasCredentials())('SQL features & edge cases (e2e)', () => {
-  const tableName = 'e2e_feat';
+describe.skipIf(!hasCredentials())("SQL features & edge cases (e2e)", () => {
+  const tableName = "e2e_feat";
   const tbl = bt(tableName);
 
   beforeAll(async () => {
@@ -43,7 +43,7 @@ describe.skipIf(!hasCredentials())('SQL features & edge cases (e2e)', () => {
     }
   });
 
-  it('handles NULL values on insert and select', async () => {
+  it("handles NULL values on insert and select", async () => {
     const db = getDb();
     const rows = await db.execute<{ id: number; notes: string | null }>(
       sql`SELECT id, notes FROM ${sql.raw(tbl)} WHERE notes IS NULL ORDER BY id`,
@@ -52,11 +52,11 @@ describe.skipIf(!hasCredentials())('SQL features & edge cases (e2e)', () => {
     expect(rows.every((r) => r.notes === null)).toBe(true);
   });
 
-  it('round-trips strings with special characters', async () => {
+  it("round-trips strings with special characters", async () => {
     const db = getDb();
     const tricky = "quote ' backtick ` newline \n unicode 🎉";
     await db.execute(
-      sql`INSERT INTO ${sql.raw(tbl)} VALUES (${100}, ${tricky}, ${'special'}, ${0}, ${null})`,
+      sql`INSERT INTO ${sql.raw(tbl)} VALUES (${100}, ${tricky}, ${"special"}, ${0}, ${null})`,
     );
     const rows = await db.execute<{ name: string }>(
       sql`SELECT name FROM ${sql.raw(tbl)} WHERE id = ${100}`,
@@ -65,11 +65,11 @@ describe.skipIf(!hasCredentials())('SQL features & edge cases (e2e)', () => {
     expect(rows[0]!.name).toBe(tricky);
   });
 
-  it('parameter binding prevents SQL injection', async () => {
+  it("parameter binding prevents SQL injection", async () => {
     const db = getDb();
     const malicious = `'; DROP TABLE ${tableName}; --`;
     await db.execute(
-      sql`INSERT INTO ${sql.raw(tbl)} VALUES (${101}, ${malicious}, ${'attack'}, ${0}, ${null})`,
+      sql`INSERT INTO ${sql.raw(tbl)} VALUES (${101}, ${malicious}, ${"attack"}, ${0}, ${null})`,
     );
     const rows = await db.execute<{ name: string }>(
       sql`SELECT name FROM ${sql.raw(tbl)} WHERE id = ${101}`,
@@ -81,7 +81,7 @@ describe.skipIf(!hasCredentials())('SQL features & edge cases (e2e)', () => {
     expect(Number(stillThere[0]!.cnt)).toBeGreaterThan(0);
   });
 
-  it('runs aggregate functions SUM, AVG, MIN, MAX', async () => {
+  it("runs aggregate functions SUM, AVG, MIN, MAX", async () => {
     const db = getDb();
     const rows = await db.execute<{
       s: number;
@@ -100,7 +100,7 @@ describe.skipIf(!hasCredentials())('SQL features & edge cases (e2e)', () => {
     expect(Number(r.a)).toBe(15);
   });
 
-  it('groups by a column', async () => {
+  it("groups by a column", async () => {
     const db = getDb();
     const rows = await db.execute<{ category: string; cnt: number }>(
       sql`SELECT category, COUNT(*) AS cnt FROM ${sql.raw(tbl)}
@@ -109,46 +109,46 @@ describe.skipIf(!hasCredentials())('SQL features & edge cases (e2e)', () => {
     );
     expect(rows).toHaveLength(2);
     const byCat = Object.fromEntries(rows.map((r) => [r.category, Number(r.cnt)]));
-    expect(byCat['fruit']).toBe(3);
-    expect(byCat['veg']).toBe(2);
+    expect(byCat["fruit"]).toBe(3);
+    expect(byCat["veg"]).toBe(2);
   });
 
-  it('selects DISTINCT values', async () => {
+  it("selects DISTINCT values", async () => {
     const db = getDb();
     const rows = await db.execute<{ category: string }>(
       sql`SELECT DISTINCT category FROM ${sql.raw(tbl)} WHERE id <= ${5} ORDER BY category`,
     );
     const cats = rows.map((r) => r.category);
-    expect(cats).toEqual(['fruit', 'veg']);
+    expect(cats).toEqual(["fruit", "veg"]);
   });
 
-  it('uses CASE WHEN expressions', async () => {
+  it("uses CASE WHEN expressions", async () => {
     const db = getDb();
     const rows = await db.execute<{ id: number; bucket: string }>(
-      sql`SELECT id, CASE WHEN value >= ${20} THEN ${'high'}
-                          WHEN value >= ${10} THEN ${'mid'}
-                          ELSE ${'low'} END AS bucket
+      sql`SELECT id, CASE WHEN value >= ${20} THEN ${"high"}
+                          WHEN value >= ${10} THEN ${"mid"}
+                          ELSE ${"low"} END AS bucket
           FROM ${sql.raw(tbl)} WHERE id <= ${5} ORDER BY id`,
     );
     const buckets = Object.fromEntries(rows.map((r) => [r.id, r.bucket]));
-    expect(buckets[1]).toBe('mid');
-    expect(buckets[2]).toBe('high');
-    expect(buckets[3]).toBe('mid');
-    expect(buckets[4]).toBe('high');
-    expect(buckets[5]).toBe('low');
+    expect(buckets[1]).toBe("mid");
+    expect(buckets[2]).toBe("high");
+    expect(buckets[3]).toBe("mid");
+    expect(buckets[4]).toBe("high");
+    expect(buckets[5]).toBe("low");
   });
 
-  it('runs a subquery with IN', async () => {
+  it("runs a subquery with IN", async () => {
     const db = getDb();
     const rows = await db.execute<{ id: number; name: string }>(
       sql`SELECT id, name FROM ${sql.raw(tbl)}
-          WHERE id IN (SELECT id FROM ${sql.raw(tbl)} WHERE category = ${'fruit'} AND id <= ${5})
+          WHERE id IN (SELECT id FROM ${sql.raw(tbl)} WHERE category = ${"fruit"} AND id <= ${5})
           ORDER BY id`,
     );
     expect(rows.map((r) => r.id)).toEqual([1, 2, 4]);
   });
 
-  it('combines two SELECTs with UNION', async () => {
+  it("combines two SELECTs with UNION", async () => {
     const db = getDb();
     const rows = await db.execute<{ id: number }>(
       sql`SELECT id FROM ${sql.raw(tbl)} WHERE id = ${1}
@@ -159,37 +159,35 @@ describe.skipIf(!hasCredentials())('SQL features & edge cases (e2e)', () => {
     expect(rows.map((r) => r.id)).toEqual([1, 2]);
   });
 
-  it('uses sql.identifier for dynamic table/column names', async () => {
+  it("uses sql.identifier for dynamic table/column names", async () => {
     const db = getDb();
     const rows = await db.execute<{ id: number }>(
-      sql`SELECT ${sql.identifier('id')} FROM ${sql.identifier(tableName)} WHERE id = ${1}`,
+      sql`SELECT ${sql.identifier("id")} FROM ${sql.identifier(tableName)} WHERE id = ${1}`,
     );
     expect(rows).toEqual([{ id: 1 }]);
   });
 
-  it('runs raw SQL via sql.raw()', async () => {
+  it("runs raw SQL via sql.raw()", async () => {
     const db = getDb();
-    const rows = await db.execute<{ n: number }>(sql.raw('SELECT 42 AS n'));
+    const rows = await db.execute<{ n: number }>(sql.raw("SELECT 42 AS n"));
     expect(rows).toEqual([{ n: 42 }]);
   });
 
-  it('composes a query from multiple sql fragments', async () => {
+  it("composes a query from multiple sql fragments", async () => {
     const db = getDb();
     const select = sql`SELECT id, name`;
     const from = sql`FROM ${sql.raw(tbl)}`;
     const where = sql`WHERE id = ${1}`;
-    const rows = await db.execute<{ id: number; name: string }>(
-      sql`${select} ${from} ${where}`,
-    );
+    const rows = await db.execute<{ id: number; name: string }>(sql`${select} ${from} ${where}`);
     expect(rows).toHaveLength(1);
     expect(rows[0]!.id).toBe(1);
   });
 
-  it('round-trips a 10,000 character string', async () => {
+  it("round-trips a 10,000 character string", async () => {
     const db = getDb();
-    const big = 'x'.repeat(10000);
+    const big = "x".repeat(10000);
     await db.execute(
-      sql`INSERT INTO ${sql.raw(tbl)} VALUES (${200}, ${'big'}, ${'big'}, ${0}, ${big})`,
+      sql`INSERT INTO ${sql.raw(tbl)} VALUES (${200}, ${"big"}, ${"big"}, ${0}, ${big})`,
     );
     const rows = await db.execute<{ notes: string }>(
       sql`SELECT notes FROM ${sql.raw(tbl)} WHERE id = ${200}`,
@@ -199,7 +197,7 @@ describe.skipIf(!hasCredentials())('SQL features & edge cases (e2e)', () => {
     expect(rows[0]!.notes).toBe(big);
   });
 
-  it('selects with LIMIT and OFFSET', async () => {
+  it("selects with LIMIT and OFFSET", async () => {
     const db = getDb();
     const rows = await db.execute<{ id: number }>(
       sql`SELECT id FROM ${sql.raw(tbl)} WHERE id <= ${5} ORDER BY id LIMIT ${2} OFFSET ${2}`,

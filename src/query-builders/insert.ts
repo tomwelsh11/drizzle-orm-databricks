@@ -1,16 +1,16 @@
-import { entityKind, is } from 'drizzle-orm/entity';
-import { QueryPromise } from 'drizzle-orm/query-promise';
-import { Param, SQL } from 'drizzle-orm/sql';
-import { Table } from 'drizzle-orm/table';
+import { entityKind, is } from "drizzle-orm/entity";
+import { QueryPromise } from "drizzle-orm/query-promise";
+import { Param, SQL } from "drizzle-orm/sql";
+import { Table } from "drizzle-orm/table";
 
-import type { DatabricksDialect } from '../dialect';
-import type { DatabricksSession } from '../session';
-import type { DatabricksTable } from '../table';
+import type { DatabricksDialect } from "../dialect";
+import type { DatabricksSession } from "../session";
+import type { DatabricksTable } from "../table";
 
 const TableSymbol = (Table as any).Symbol as { Columns: symbol };
 
 export class DatabricksInsertBuilder<TTable extends DatabricksTable<any>> {
-  static readonly [entityKind]: string = 'DatabricksInsertBuilder';
+  static readonly [entityKind]: string = "DatabricksInsertBuilder";
 
   constructor(
     private table: TTable,
@@ -21,7 +21,7 @@ export class DatabricksInsertBuilder<TTable extends DatabricksTable<any>> {
   values(values: Record<string, unknown> | Record<string, unknown>[]) {
     values = Array.isArray(values) ? values : [values];
     if (values.length === 0) {
-      throw new Error('values() must be called with at least one value');
+      throw new Error("values() must be called with at least one value");
     }
 
     const mappedValues = values.map((entry) => {
@@ -39,7 +39,7 @@ export class DatabricksInsertBuilder<TTable extends DatabricksTable<any>> {
 }
 
 export class DatabricksInsertBase<TTable extends DatabricksTable<any>> extends QueryPromise<void> {
-  static override readonly [entityKind]: string = 'DatabricksInsert';
+  static override readonly [entityKind]: string = "DatabricksInsert";
 
   config: {
     table: TTable;

@@ -1,23 +1,23 @@
-import { entityKind } from 'drizzle-orm/entity';
-import { QueryPromise } from 'drizzle-orm/query-promise';
-import { SelectionProxyHandler } from 'drizzle-orm/selection-proxy';
-import type { SQL } from 'drizzle-orm/sql';
-import { Subquery } from 'drizzle-orm/subquery';
-import { Table } from 'drizzle-orm/table';
-import type { Column } from 'drizzle-orm/column';
+import { entityKind } from "drizzle-orm/entity";
+import { QueryPromise } from "drizzle-orm/query-promise";
+import { SelectionProxyHandler } from "drizzle-orm/selection-proxy";
+import type { SQL } from "drizzle-orm/sql";
+import { Subquery } from "drizzle-orm/subquery";
+import { Table } from "drizzle-orm/table";
+import type { Column } from "drizzle-orm/column";
 
-import type { DatabricksDialect } from '../dialect';
-import type { DatabricksSession } from '../session';
-import type { DatabricksTable } from '../table';
+import type { DatabricksDialect } from "../dialect";
+import type { DatabricksSession } from "../session";
+import type { DatabricksTable } from "../table";
 
 const TableSymbol = (Table as any).Symbol as { Columns: symbol };
 
-const { mapUpdateSet } = require('drizzle-orm/utils') as {
+const { mapUpdateSet } = require("drizzle-orm/utils") as {
   mapUpdateSet: (table: any, values: any) => Record<string, unknown>;
 };
 
 export class DatabricksUpdateBuilder<TTable extends DatabricksTable<any>> {
-  static readonly [entityKind]: string = 'DatabricksUpdateBuilder';
+  static readonly [entityKind]: string = "DatabricksUpdateBuilder";
 
   constructor(
     private table: TTable,
@@ -38,7 +38,7 @@ export class DatabricksUpdateBuilder<TTable extends DatabricksTable<any>> {
 }
 
 export class DatabricksUpdateBase<TTable extends DatabricksTable<any>> extends QueryPromise<void> {
-  static override readonly [entityKind]: string = 'DatabricksUpdate';
+  static override readonly [entityKind]: string = "DatabricksUpdate";
 
   config: {
     set: Record<string, unknown>;
@@ -65,12 +65,12 @@ export class DatabricksUpdateBase<TTable extends DatabricksTable<any>> extends Q
     return this;
   }
 
-  orderBy(...columns: (SQL | Column)[] | [((fields: any) => (SQL | Column)[] | SQL | Column)]) {
-    if (typeof columns[0] === 'function') {
+  orderBy(...columns: (SQL | Column)[] | [(fields: any) => (SQL | Column)[] | SQL | Column]) {
+    if (typeof columns[0] === "function") {
       const orderBy = (columns[0] as Function)(
         new Proxy(
           (this.config.table as any)[TableSymbol.Columns],
-          new SelectionProxyHandler({ sqlAliasedBehavior: 'alias', sqlBehavior: 'sql' }),
+          new SelectionProxyHandler({ sqlAliasedBehavior: "alias", sqlBehavior: "sql" }),
         ),
       );
       const orderByArray = Array.isArray(orderBy) ? orderBy : [orderBy];
