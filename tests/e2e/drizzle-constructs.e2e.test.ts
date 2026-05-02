@@ -168,6 +168,21 @@ describe.skipIf(!hasCredentials())('Drizzle constructs (e2e)', () => {
     expect(parsed).toMatchObject({ action: 'login', ip: '1.2.3.4' });
   });
 
+  // -- INSERT with Drizzle table ref + sql.identifier --
+
+  it('inserts a row using table ref and sql.identifier for columns', async () => {
+    const db = getDb();
+    await db.execute(
+      sql`INSERT INTO ${users} (${sql.identifier('id')}, ${sql.identifier('name')}, ${sql.identifier('age')}, ${sql.identifier('login_count')}, ${sql.identifier('active')}, ${sql.identifier('score')}, ${sql.identifier('balance')}, ${sql.identifier('created_at')})
+          VALUES (${'u_ins'}, ${'Inserted'}, ${40}, ${10}, ${true}, ${1.23}, ${'500.00'}, TIMESTAMP'2025-01-01 00:00:00')`,
+    );
+    const rows = await db.execute<Record<string, unknown>>(
+      sql`SELECT ${users.id}, ${users.name}, ${users.age} FROM ${users} WHERE ${users.id} = ${'u_ins'}`,
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ id: 'u_ins', name: 'Inserted', age: 40 });
+  });
+
   // -- Fragment composition --
 
   it('composes fragments using table and column references', async () => {
