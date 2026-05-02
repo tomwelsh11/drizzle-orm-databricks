@@ -297,11 +297,7 @@ describe.skipIf(!hasCredentials())("Query builder JOINs (e2e)", () => {
 
   it("CROSS JOIN with WHERE filters the product", async () => {
     const db = getDb();
-    const rows = await db
-      .select()
-      .from(users)
-      .crossJoin(posts)
-      .where(eq(users.id, "u1"));
+    const rows = await db.select().from(users).crossJoin(posts).where(eq(users.id, "u1"));
 
     // u1 × 5 posts = 5 rows
     expect(rows).toHaveLength(5);
