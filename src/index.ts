@@ -11,7 +11,8 @@ export type {
   DatabricksClientConfig,
 } from "./types";
 
-export { databricksTable, databricksSchema, DatabricksTable } from "./table";
+export { databricksTable, databricksSchema, databricksCatalog, DatabricksTable } from "./table";
+export type { DatabricksCatalog, NamespaceOverride } from "./table";
 
 export {
   DatabricksSelectBuilder,
