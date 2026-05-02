@@ -1,15 +1,15 @@
-import { sql } from 'drizzle-orm';
-import { drizzle, type DatabricksDatabase } from '../../src/driver';
-import type { DatabricksConnectionConfig } from '../../src/types';
+import { sql } from "drizzle-orm";
+import { drizzle, type DatabricksDatabase } from "../../src/driver";
+import type { DatabricksConnectionConfig } from "../../src/types";
 
 const env = {
-  host: process.env['DATABRICKS_HOST'],
-  path: process.env['DATABRICKS_SQL_PATH'],
-  token: process.env['DATABRICKS_TOKEN'],
-  clientId: process.env['DATABRICKS_CLIENT_ID'],
-  clientSecret: process.env['DATABRICKS_CLIENT_SECRET'],
-  catalog: process.env['DATABRICKS_CATALOG'],
-  schema: process.env['DATABRICKS_SCHEMA'],
+  host: process.env["DATABRICKS_HOST"],
+  path: process.env["DATABRICKS_SQL_PATH"],
+  token: process.env["DATABRICKS_TOKEN"],
+  clientId: process.env["DATABRICKS_CLIENT_ID"],
+  clientSecret: process.env["DATABRICKS_CLIENT_SECRET"],
+  catalog: process.env["DATABRICKS_CATALOG"],
+  schema: process.env["DATABRICKS_SCHEMA"],
 };
 
 export function hasCredentials(): boolean {
@@ -18,12 +18,27 @@ export function hasCredentials(): boolean {
 
 export function getConnectionConfig(): DatabricksConnectionConfig {
   if (!hasCredentials()) {
-    throw new Error('Missing DATABRICKS_HOST / DATABRICKS_SQL_PATH and either DATABRICKS_TOKEN or DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET');
+    throw new Error(
+      "Missing DATABRICKS_HOST / DATABRICKS_SQL_PATH and either DATABRICKS_TOKEN or DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET",
+    );
   }
   if (env.token) {
-    return { host: env.host!, path: env.path!, token: env.token, catalog: env.catalog, schema: env.schema };
+    return {
+      host: env.host!,
+      path: env.path!,
+      token: env.token,
+      catalog: env.catalog,
+      schema: env.schema,
+    };
   }
-  return { host: env.host!, path: env.path!, clientId: env.clientId!, clientSecret: env.clientSecret!, catalog: env.catalog, schema: env.schema };
+  return {
+    host: env.host!,
+    path: env.path!,
+    clientId: env.clientId!,
+    clientSecret: env.clientSecret!,
+    catalog: env.catalog,
+    schema: env.schema,
+  };
 }
 
 let cachedDb: DatabricksDatabase | undefined;
@@ -46,5 +61,5 @@ export async function dropTable(db: DatabricksDatabase, name: string): Promise<v
 }
 
 function backtick(name: string): string {
-  return '`' + name.replace(/`/g, '``') + '`';
+  return "`" + name.replace(/`/g, "``") + "`";
 }

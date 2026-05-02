@@ -1,24 +1,20 @@
-import { Column } from 'drizzle-orm/column';
-import { entityKind, is } from 'drizzle-orm/entity';
-import { TypedQueryBuilder } from 'drizzle-orm/query-builders/query-builder';
-import { QueryPromise } from 'drizzle-orm/query-promise';
-import { SelectionProxyHandler } from 'drizzle-orm/selection-proxy';
-import { SQL, View } from 'drizzle-orm/sql';
-import { Subquery } from 'drizzle-orm/subquery';
-import { getTableName, Table } from 'drizzle-orm/table';
-import { getTableColumns, haveSameKeys } from 'drizzle-orm/utils';
-import { ViewBaseConfig } from 'drizzle-orm/view-common';
+import { Column } from "drizzle-orm/column";
+import { entityKind, is } from "drizzle-orm/entity";
+import { TypedQueryBuilder } from "drizzle-orm/query-builders/query-builder";
+import { QueryPromise } from "drizzle-orm/query-promise";
+import { SelectionProxyHandler } from "drizzle-orm/selection-proxy";
+import { SQL, View } from "drizzle-orm/sql";
+import { Subquery } from "drizzle-orm/subquery";
+import { getTableName, Table } from "drizzle-orm/table";
+import { getTableColumns, haveSameKeys } from "drizzle-orm/utils";
+import { ViewBaseConfig } from "drizzle-orm/view-common";
 
-import type { DatabricksDialect } from '../dialect';
-import type { DatabricksSession } from '../session';
-import type { DatabricksTable } from '../table';
+import type { DatabricksDialect } from "../dialect";
+import type { DatabricksSession } from "../session";
+import type { DatabricksTable } from "../table";
 
 // Runtime-only drizzle-orm utilities not in type declarations
-const {
-  applyMixins,
-  getTableLikeName,
-  orderSelectedFields,
-} = require('drizzle-orm/utils') as {
+const { applyMixins, getTableLikeName, orderSelectedFields } = require("drizzle-orm/utils") as {
   applyMixins: (baseClass: any, extendedClasses: any[]) => void;
   getTableLikeName: (table: any) => string | undefined;
   orderSelectedFields: (fields: any) => FieldMapping;
@@ -33,10 +29,8 @@ const TableSymbol = (Table as any).Symbol as {
   Columns: symbol;
 };
 
-export class DatabricksSelectBuilder<
-  TSelection extends Record<string, unknown> | undefined,
-> {
-  static readonly [entityKind]: string = 'DatabricksSelectBuilder';
+export class DatabricksSelectBuilder<TSelection extends Record<string, unknown> | undefined> {
+  static readonly [entityKind]: string = "DatabricksSelectBuilder";
 
   private fields: TSelection;
   private session: DatabricksSession;
@@ -94,7 +88,7 @@ export class DatabricksSelectQueryBuilderBase<
   TResult = unknown,
   TSelectHKT extends Record<string, unknown> = Record<string, unknown>,
 > extends TypedQueryBuilder<TSelection, TResult> {
-  static override readonly [entityKind]: string = 'DatabricksSelectQueryBuilder';
+  static override readonly [entityKind]: string = "DatabricksSelectQueryBuilder";
 
   declare _: { selectedFields: TSelection; result: TResult };
   config: any;
@@ -137,8 +131,7 @@ export class DatabricksSelectQueryBuilderBase<
       result: undefined as unknown as TResult,
     };
     this.tableName = getTableLikeName(table);
-    this.joinsNotNullableMap =
-      typeof this.tableName === 'string' ? { [this.tableName]: true } : {};
+    this.joinsNotNullableMap = typeof this.tableName === "string" ? { [this.tableName]: true } : {};
   }
 
   private createJoin(joinType: string) {
@@ -147,7 +140,7 @@ export class DatabricksSelectQueryBuilderBase<
       const tableName = getTableLikeName(table);
 
       if (
-        typeof tableName === 'string' &&
+        typeof tableName === "string" &&
         this.config.joins?.some((join: any) => join.alias === tableName)
       ) {
         throw new Error(`Alias "${tableName}" is already used in this query`);
@@ -156,13 +149,13 @@ export class DatabricksSelectQueryBuilderBase<
       if (!this.isPartialSelect) {
         if (
           Object.keys(this.joinsNotNullableMap).length === 1 &&
-          typeof baseTableName === 'string'
+          typeof baseTableName === "string"
         ) {
           this.config.fields = {
             [baseTableName]: this.config.fields,
           };
         }
-        if (typeof tableName === 'string' && !is(table, SQL)) {
+        if (typeof tableName === "string" && !is(table, SQL)) {
           const selection = is(table, Subquery)
             ? (table as any)._.selectedFields
             : is(table, View)
@@ -172,13 +165,13 @@ export class DatabricksSelectQueryBuilderBase<
         }
       }
 
-      if (typeof on === 'function') {
+      if (typeof on === "function") {
         on = on(
           new Proxy(
             this.config.fields,
             new SelectionProxyHandler({
-              sqlAliasedBehavior: 'sql',
-              sqlBehavior: 'sql',
+              sqlAliasedBehavior: "sql",
+              sqlBehavior: "sql",
             }),
           ),
         );
@@ -189,21 +182,21 @@ export class DatabricksSelectQueryBuilderBase<
       }
       this.config.joins.push({ on, table, joinType, alias: tableName });
 
-      if (typeof tableName === 'string') {
+      if (typeof tableName === "string") {
         switch (joinType) {
-          case 'left':
+          case "left":
             this.joinsNotNullableMap[tableName] = false;
             break;
-          case 'right':
+          case "right":
             this.joinsNotNullableMap = Object.fromEntries(
               Object.entries(this.joinsNotNullableMap).map(([key]) => [key, false]),
             );
             this.joinsNotNullableMap[tableName] = true;
             break;
-          case 'inner':
+          case "inner":
             this.joinsNotNullableMap[tableName] = true;
             break;
-          case 'full':
+          case "full":
             this.joinsNotNullableMap = Object.fromEntries(
               Object.entries(this.joinsNotNullableMap).map(([key]) => [key, false]),
             );
@@ -215,20 +208,20 @@ export class DatabricksSelectQueryBuilderBase<
     };
   }
 
-  leftJoin = this.createJoin('left');
-  rightJoin = this.createJoin('right');
-  innerJoin = this.createJoin('inner');
-  fullJoin = this.createJoin('full');
+  leftJoin = this.createJoin("left");
+  rightJoin = this.createJoin("right");
+  innerJoin = this.createJoin("inner");
+  fullJoin = this.createJoin("full");
 
   private createSetOperator(type: string, isAll: boolean) {
     return (rightSelection: any) => {
       const rightSelect =
-        typeof rightSelection === 'function'
+        typeof rightSelection === "function"
           ? rightSelection(getDatabricksSetOperators())
           : rightSelection;
       if (!haveSameKeys(this.getSelectedFields(), rightSelect.getSelectedFields())) {
         throw new Error(
-          'Set operator error (union / intersect / except): selected fields are not the same or are in a different order',
+          "Set operator error (union / intersect / except): selected fields are not the same or are in a different order",
         );
       }
       this.config.setOperators.push({ type, isAll, rightSelect });
@@ -236,12 +229,12 @@ export class DatabricksSelectQueryBuilderBase<
     };
   }
 
-  union = this.createSetOperator('union', false);
-  unionAll = this.createSetOperator('union', true);
-  intersect = this.createSetOperator('intersect', false);
-  intersectAll = this.createSetOperator('intersect', true);
-  except = this.createSetOperator('except', false);
-  exceptAll = this.createSetOperator('except', true);
+  union = this.createSetOperator("union", false);
+  unionAll = this.createSetOperator("union", true);
+  intersect = this.createSetOperator("intersect", false);
+  intersectAll = this.createSetOperator("intersect", true);
+  except = this.createSetOperator("except", false);
+  exceptAll = this.createSetOperator("except", true);
 
   /** @internal */
   addSetOperators(setOperators: any[]) {
@@ -250,9 +243,12 @@ export class DatabricksSelectQueryBuilderBase<
   }
 
   where(where: SQL | ((fields: any) => SQL | undefined) | undefined) {
-    if (typeof where === 'function') {
+    if (typeof where === "function") {
       where = where(
-        new Proxy(this.config.fields, new SelectionProxyHandler({ sqlAliasedBehavior: 'sql', sqlBehavior: 'sql' })),
+        new Proxy(
+          this.config.fields,
+          new SelectionProxyHandler({ sqlAliasedBehavior: "sql", sqlBehavior: "sql" }),
+        ),
       );
     }
     this.config.where = where;
@@ -260,19 +256,25 @@ export class DatabricksSelectQueryBuilderBase<
   }
 
   having(having: SQL | ((fields: any) => SQL | undefined) | undefined) {
-    if (typeof having === 'function') {
+    if (typeof having === "function") {
       having = having(
-        new Proxy(this.config.fields, new SelectionProxyHandler({ sqlAliasedBehavior: 'sql', sqlBehavior: 'sql' })),
+        new Proxy(
+          this.config.fields,
+          new SelectionProxyHandler({ sqlAliasedBehavior: "sql", sqlBehavior: "sql" }),
+        ),
       );
     }
     this.config.having = having;
     return this;
   }
 
-  groupBy(...columns: (SQL | Column)[] | [((fields: any) => (SQL | Column)[] | SQL | Column)]) {
-    if (typeof columns[0] === 'function') {
+  groupBy(...columns: (SQL | Column)[] | [(fields: any) => (SQL | Column)[] | SQL | Column]) {
+    if (typeof columns[0] === "function") {
       const groupBy = (columns[0] as Function)(
-        new Proxy(this.config.fields, new SelectionProxyHandler({ sqlAliasedBehavior: 'alias', sqlBehavior: 'sql' })),
+        new Proxy(
+          this.config.fields,
+          new SelectionProxyHandler({ sqlAliasedBehavior: "alias", sqlBehavior: "sql" }),
+        ),
       );
       this.config.groupBy = Array.isArray(groupBy) ? groupBy : [groupBy];
     } else {
@@ -281,10 +283,13 @@ export class DatabricksSelectQueryBuilderBase<
     return this;
   }
 
-  orderBy(...columns: (SQL | Column)[] | [((fields: any) => (SQL | Column)[] | SQL | Column)]) {
-    if (typeof columns[0] === 'function') {
+  orderBy(...columns: (SQL | Column)[] | [(fields: any) => (SQL | Column)[] | SQL | Column]) {
+    if (typeof columns[0] === "function") {
       const orderBy = (columns[0] as Function)(
-        new Proxy(this.config.fields, new SelectionProxyHandler({ sqlAliasedBehavior: 'alias', sqlBehavior: 'sql' })),
+        new Proxy(
+          this.config.fields,
+          new SelectionProxyHandler({ sqlAliasedBehavior: "alias", sqlBehavior: "sql" }),
+        ),
       );
       const orderByArray = Array.isArray(orderBy) ? orderBy : [orderBy];
       if (this.config.setOperators.length > 0) {
@@ -334,7 +339,7 @@ export class DatabricksSelectQueryBuilderBase<
   as(alias: string): Subquery {
     return new Proxy(
       new Subquery(this.getSQL(), this.config.fields, alias),
-      new SelectionProxyHandler({ alias, sqlAliasedBehavior: 'alias', sqlBehavior: 'error' }),
+      new SelectionProxyHandler({ alias, sqlAliasedBehavior: "alias", sqlBehavior: "error" }),
     ) as unknown as Subquery;
   }
 
@@ -344,8 +349,8 @@ export class DatabricksSelectQueryBuilderBase<
       this.config.fields,
       new SelectionProxyHandler({
         alias: this.tableName,
-        sqlAliasedBehavior: 'alias',
-        sqlBehavior: 'error',
+        sqlAliasedBehavior: "alias",
+        sqlBehavior: "error",
       }),
     ) as any;
   }
@@ -359,7 +364,9 @@ export interface DatabricksSelectBase<
   TSelection extends Record<string, unknown>,
   TResult,
   TSelectHKT extends Record<string, unknown>,
-> extends DatabricksSelectQueryBuilderBase<TSelection, TResult, TSelectHKT>,
+>
+  extends
+    DatabricksSelectQueryBuilderBase<TSelection, TResult, TSelectHKT>,
     QueryPromise<TResult> {}
 
 export class DatabricksSelectBase<
@@ -367,12 +374,12 @@ export class DatabricksSelectBase<
   TResult = unknown,
   TSelectHKT extends Record<string, unknown> = Record<string, unknown>,
 > extends DatabricksSelectQueryBuilderBase<TSelection, TResult, TSelectHKT> {
-  static override readonly [entityKind]: string = 'DatabricksSelect';
+  static override readonly [entityKind]: string = "DatabricksSelect";
 
   prepare() {
     if (!this.session) {
       throw new Error(
-        'Cannot execute a query on a query builder. Please use a database instance instead.',
+        "Cannot execute a query on a query builder. Please use a database instance instead.",
       );
     }
     const fieldsList: FieldMapping = orderSelectedFields(this.config.fields);
@@ -447,9 +454,8 @@ function mapObjectResultRow(
         node = node[pathChunk] as Record<string, unknown>;
       } else {
         const rawValue = row[key];
-        node[pathChunk] = rawValue === null || rawValue === undefined
-          ? null
-          : decoder.mapFromDriverValue(rawValue);
+        node[pathChunk] =
+          rawValue === null || rawValue === undefined ? null : decoder.mapFromDriverValue(rawValue);
       }
     }
   }
@@ -458,7 +464,11 @@ function mapObjectResultRow(
     for (const [key, isNotNullable] of Object.entries(joinsNotNullableMap)) {
       if (!isNotNullable) {
         const nested = result[key] as Record<string, unknown> | null;
-        if (nested && typeof nested === 'object' && Object.values(nested).every((v) => v === null)) {
+        if (
+          nested &&
+          typeof nested === "object" &&
+          Object.values(nested).every((v) => v === null)
+        ) {
           result[key] = null;
         }
       }
@@ -476,9 +486,11 @@ function createSetOperator(type: string, isAll: boolean) {
       rightSelect: select,
     }));
     for (const setOperator of setOperators) {
-      if (!haveSameKeys(leftSelect.getSelectedFields(), setOperator.rightSelect.getSelectedFields())) {
+      if (
+        !haveSameKeys(leftSelect.getSelectedFields(), setOperator.rightSelect.getSelectedFields())
+      ) {
         throw new Error(
-          'Set operator error (union / intersect / except): selected fields are not the same or are in a different order',
+          "Set operator error (union / intersect / except): selected fields are not the same or are in a different order",
         );
       }
     }
@@ -495,9 +507,9 @@ const getDatabricksSetOperators = () => ({
   exceptAll,
 });
 
-export const union = createSetOperator('union', false);
-export const unionAll = createSetOperator('union', true);
-export const intersect = createSetOperator('intersect', false);
-export const intersectAll = createSetOperator('intersect', true);
-export const except = createSetOperator('except', false);
-export const exceptAll = createSetOperator('except', true);
+export const union = createSetOperator("union", false);
+export const unionAll = createSetOperator("union", true);
+export const intersect = createSetOperator("intersect", false);
+export const intersectAll = createSetOperator("intersect", true);
+export const except = createSetOperator("except", false);
+export const exceptAll = createSetOperator("except", true);

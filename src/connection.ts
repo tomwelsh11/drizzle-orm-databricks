@@ -1,8 +1,13 @@
-import { DBSQLClient } from '@databricks/sql';
-import type { ConnectionOptions } from '@databricks/sql/dist/contracts/IDBSQLClient';
-import type IDBSQLSession from '@databricks/sql/dist/contracts/IDBSQLSession';
-import { DatabricksConnectionError } from './errors';
-import { isClientConfig, isOAuthConfig, type DatabricksConfig, type DatabricksConnectionConfig } from './types';
+import { DBSQLClient } from "@databricks/sql";
+import type { ConnectionOptions } from "@databricks/sql/dist/contracts/IDBSQLClient";
+import type IDBSQLSession from "@databricks/sql/dist/contracts/IDBSQLSession";
+import { DatabricksConnectionError } from "./errors";
+import {
+  isClientConfig,
+  isOAuthConfig,
+  type DatabricksConfig,
+  type DatabricksConnectionConfig,
+} from "./types";
 
 interface ResolvedSessionOptions {
   initialCatalog?: string;
@@ -86,7 +91,7 @@ export class SessionManager {
         this.client = client;
       } catch (err) {
         throw new DatabricksConnectionError(
-          'Failed to connect to Databricks SQL warehouse. Check host, path, and credentials.',
+          "Failed to connect to Databricks SQL warehouse. Check host, path, and credentials.",
           err,
         );
       } finally {
@@ -99,18 +104,18 @@ export class SessionManager {
 
   private async openSession(): Promise<IDBSQLSession> {
     if (!this.client) {
-      throw new DatabricksConnectionError('Databricks client is not initialized.');
+      throw new DatabricksConnectionError("Databricks client is not initialized.");
     }
     try {
       return await this.client.openSession(this.sessionOptions);
     } catch (err) {
-      throw new DatabricksConnectionError('Failed to open Databricks session.', err);
+      throw new DatabricksConnectionError("Failed to open Databricks session.", err);
     }
   }
 
   private async isSessionAlive(session: IDBSQLSession): Promise<boolean> {
     const maybe = session as unknown as { isOpen?: () => boolean | Promise<boolean> };
-    if (typeof maybe.isOpen === 'function') {
+    if (typeof maybe.isOpen === "function") {
       try {
         return await maybe.isOpen();
       } catch {
@@ -126,7 +131,7 @@ function buildConnectArgs(config: DatabricksConnectionConfig): ConnectionOptions
     return {
       host: config.host,
       path: config.path,
-      authType: 'databricks-oauth',
+      authType: "databricks-oauth",
       oauthClientId: config.clientId,
       oauthClientSecret: config.clientSecret,
     };
@@ -135,13 +140,13 @@ function buildConnectArgs(config: DatabricksConnectionConfig): ConnectionOptions
 }
 
 function isStaleSessionError(err: unknown): boolean {
-  if (!err || typeof err !== 'object') return false;
-  const msg = String((err as { message?: unknown }).message ?? '').toLowerCase();
+  if (!err || typeof err !== "object") return false;
+  const msg = String((err as { message?: unknown }).message ?? "").toLowerCase();
   return (
-    msg.includes('session') &&
-    (msg.includes('closed') ||
-      msg.includes('expired') ||
-      msg.includes('invalid') ||
-      msg.includes('not found'))
+    msg.includes("session") &&
+    (msg.includes("closed") ||
+      msg.includes("expired") ||
+      msg.includes("invalid") ||
+      msg.includes("not found"))
   );
 }

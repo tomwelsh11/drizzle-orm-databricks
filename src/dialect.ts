@@ -1,15 +1,15 @@
-import { Column } from 'drizzle-orm/column';
-import { CasingCache } from 'drizzle-orm/casing';
-import { entityKind, is } from 'drizzle-orm/entity';
-import type { QueryWithTypings } from 'drizzle-orm/sql';
-import { Param, SQL, sql, View } from 'drizzle-orm/sql';
-import { Subquery } from 'drizzle-orm/subquery';
-import { getTableName, Table } from 'drizzle-orm/table';
-import type { Casing } from 'drizzle-orm/utils';
-import { ViewBaseConfig } from 'drizzle-orm/view-common';
+import { Column } from "drizzle-orm/column";
+import { CasingCache } from "drizzle-orm/casing";
+import { entityKind, is } from "drizzle-orm/entity";
+import type { QueryWithTypings } from "drizzle-orm/sql";
+import { Param, SQL, sql, View } from "drizzle-orm/sql";
+import { Subquery } from "drizzle-orm/subquery";
+import { getTableName, Table } from "drizzle-orm/table";
+import type { Casing } from "drizzle-orm/utils";
+import { ViewBaseConfig } from "drizzle-orm/view-common";
 
-import { DatabricksColumn } from './columns/common';
-import { DatabricksTable } from './table';
+import { DatabricksColumn } from "./columns/common";
+import { DatabricksTable } from "./table";
 
 // Drizzle internal symbols not typed for external use
 const TableSymbol = (Table as any).Symbol as {
@@ -31,7 +31,7 @@ type FieldMapping = {
 }[];
 
 export class DatabricksDialect {
-  static readonly [entityKind]: string = 'DatabricksDialect';
+  static readonly [entityKind]: string = "DatabricksDialect";
 
   /** @internal */
   casing: CasingCache;
@@ -41,18 +41,18 @@ export class DatabricksDialect {
   }
 
   escapeName(name: string): string {
-    return `\`${name.replace(/`/g, '``')}\``;
+    return `\`${name.replace(/`/g, "``")}\``;
   }
 
   escapeParam(_num: number, _value: unknown): string {
-    return '?';
+    return "?";
   }
 
   escapeString(str: string): string {
     return `'${str.replace(/'/g, "''")}'`;
   }
 
-  sqlToQuery(sql: SQL, invokeSource?: 'indexes'): QueryWithTypings {
+  sqlToQuery(sql: SQL, invokeSource?: "indexes"): QueryWithTypings {
     return sql.toQuery({
       casing: this.casing,
       escapeName: this.escapeName,
@@ -125,24 +125,20 @@ export class DatabricksDialect {
   }
 
   buildLimit(limit: number | SQL | undefined): SQL | undefined {
-    return typeof limit === 'object' || (typeof limit === 'number' && limit >= 0)
+    return typeof limit === "object" || (typeof limit === "number" && limit >= 0)
       ? sql` limit ${limit}`
       : undefined;
   }
 
   buildOrderBy(orderBy: (SQL | Column)[] | undefined): SQL | undefined {
-    return orderBy && orderBy.length > 0
-      ? sql` order by ${sql.join(orderBy, sql`, `)}`
-      : undefined;
+    return orderBy && orderBy.length > 0 ? sql` order by ${sql.join(orderBy, sql`, `)}` : undefined;
   }
 
-  buildUpdateSet(
-    table: Table,
-    set: Record<string, unknown>,
-  ): SQL {
+  buildUpdateSet(table: Table, set: Record<string, unknown>): SQL {
     const tableColumns: Record<string, Column> = (table as any)[TableSymbol.Columns];
     const columnNames = Object.keys(tableColumns).filter(
-      (colName) => set[colName] !== undefined || (tableColumns[colName] as any)?.onUpdateFn !== undefined,
+      (colName) =>
+        set[colName] !== undefined || (tableColumns[colName] as any)?.onUpdateFn !== undefined,
     );
     const setSize = columnNames.length;
     return sql.join(
@@ -151,7 +147,7 @@ export class DatabricksDialect {
         const value = set[colName] ?? sql.param((col as any).onUpdateFn(), col);
         const res = sql`${sql.identifier(this.casing.getColumnCasing(col))} = ${value}`;
         if (i < setSize - 1) {
-          return [res, sql.raw(', ')];
+          return [res, sql.raw(", ")];
         }
         return [res];
       }),
@@ -179,15 +175,30 @@ export class DatabricksDialect {
     where?: SQL;
     having?: SQL;
     table: Table | Subquery | SQL | View;
-    joins?: Array<{ on: SQL; table: Table | Subquery | SQL | View; joinType: string; alias?: string; lateral?: boolean }>;
+    joins?: Array<{
+      on: SQL;
+      table: Table | Subquery | SQL | View;
+      joinType: string;
+      alias?: string;
+      lateral?: boolean;
+    }>;
     orderBy?: (SQL | Column)[];
     groupBy?: (SQL | Column)[];
     limit?: number | SQL;
     offset?: number | SQL;
     distinct?: boolean;
-    setOperators: Array<{ type: string; isAll: boolean; rightSelect: any; limit?: number | SQL; orderBy?: (SQL | Column)[]; offset?: number | SQL }>;
+    setOperators: Array<{
+      type: string;
+      isAll: boolean;
+      rightSelect: any;
+      limit?: number | SQL;
+      orderBy?: (SQL | Column)[];
+      offset?: number | SQL;
+    }>;
   }): SQL {
-    const { orderSelectedFields } = require('drizzle-orm/utils') as { orderSelectedFields: (fields: any) => FieldMapping };
+    const { orderSelectedFields } = require("drizzle-orm/utils") as {
+      orderSelectedFields: (fields: any) => FieldMapping;
+    };
     const fieldsList: FieldMapping = fieldsFlat ?? orderSelectedFields(fields);
 
     for (const f of fieldsList) {
@@ -212,7 +223,7 @@ export class DatabricksDialect {
       ) {
         const tableName = getTableName(f.field.table);
         throw new Error(
-          `Your "${f.path.join('->') }" field references a column "${tableName}"."${f.field.name}", but the table "${tableName}" is not part of the query! Did you forget to join it?`,
+          `Your "${f.path.join("->")}" field references a column "${tableName}"."${f.field.name}", but the table "${tableName}" is not part of the query! Did you forget to join it?`,
         );
       }
     }
@@ -289,19 +300,23 @@ export class DatabricksDialect {
 
   buildSetOperations(
     leftSelect: SQL,
-    setOperators: Array<{ type: string; isAll: boolean; rightSelect: any; limit?: number | SQL; orderBy?: (SQL | Column)[]; offset?: number | SQL }>,
+    setOperators: Array<{
+      type: string;
+      isAll: boolean;
+      rightSelect: any;
+      limit?: number | SQL;
+      orderBy?: (SQL | Column)[];
+      offset?: number | SQL;
+    }>,
   ): SQL {
     const [setOperator, ...rest] = setOperators;
     if (!setOperator) {
-      throw new Error('Cannot pass undefined values to any set operator');
+      throw new Error("Cannot pass undefined values to any set operator");
     }
     if (rest.length === 0) {
       return this.buildSetOperationQuery({ leftSelect, setOperator });
     }
-    return this.buildSetOperations(
-      this.buildSetOperationQuery({ leftSelect, setOperator }),
-      rest,
-    );
+    return this.buildSetOperations(this.buildSetOperationQuery({ leftSelect, setOperator }), rest);
   }
 
   buildSetOperationQuery({
@@ -309,7 +324,14 @@ export class DatabricksDialect {
     setOperator: { type, isAll, rightSelect, limit, orderBy, offset },
   }: {
     leftSelect: SQL;
-    setOperator: { type: string; isAll: boolean; rightSelect: any; limit?: number | SQL; orderBy?: (SQL | Column)[]; offset?: number | SQL };
+    setOperator: {
+      type: string;
+      isAll: boolean;
+      rightSelect: any;
+      limit?: number | SQL;
+      orderBy?: (SQL | Column)[];
+      offset?: number | SQL;
+    };
   }): SQL {
     const leftChunk = sql`(${leftSelect}) `;
     const rightChunk = sql`(${rightSelect.getSQL()})`;
@@ -324,7 +346,9 @@ export class DatabricksDialect {
           for (let i = 0; i < orderByUnit.queryChunks.length; i++) {
             const chunk = orderByUnit.queryChunks[i];
             if (is(chunk, DatabricksColumn)) {
-              orderByUnit.queryChunks[i] = sql.identifier(this.casing.getColumnCasing(chunk as any)) as any;
+              orderByUnit.queryChunks[i] = sql.identifier(
+                this.casing.getColumnCasing(chunk as any),
+              ) as any;
             }
           }
           orderByValues.push(sql`${orderByUnit}`);
@@ -336,10 +360,10 @@ export class DatabricksDialect {
     }
 
     const limitSql =
-      typeof limit === 'object' || (typeof limit === 'number' && limit >= 0)
+      typeof limit === "object" || (typeof limit === "number" && limit >= 0)
         ? sql` limit ${limit}`
         : undefined;
-    const operatorChunk = sql.raw(`${type} ${isAll ? 'all ' : ''}`);
+    const operatorChunk = sql.raw(`${type} ${isAll ? "all " : ""}`);
     const offsetSql = offset ? sql` offset ${offset}` : undefined;
 
     return sql`${leftChunk}${operatorChunk}${rightChunk}${orderBySql}${limitSql}${offsetSql}`;
@@ -363,7 +387,7 @@ export class DatabricksDialect {
     );
     const insertOrder = sql.join(
       colEntries.map(([, column]) => sql.identifier(this.casing.getColumnCasing(column))),
-      sql.raw(', '),
+      sql.raw(", "),
     );
     const generatedIdsResponse: Record<string, unknown>[] = [];
 
@@ -376,7 +400,7 @@ export class DatabricksDialect {
       }
     } else {
       const values = valuesOrSelect as Record<string, SQL | Param>[];
-      valuesSqlList.push(sql.raw('values '));
+      valuesSqlList.push(sql.raw("values "));
       for (const [valueIndex, value] of values.entries()) {
         const generatedIds: Record<string, unknown> = {};
         const valueList: (SQL | Param)[] = [];

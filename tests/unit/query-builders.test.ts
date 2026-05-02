@@ -1,6 +1,6 @@
-import { eq, and, gt, sql, asc, desc } from 'drizzle-orm';
-import { Param } from 'drizzle-orm/sql';
-import { describe, expect, it } from 'vitest';
+import { eq, and, gt, sql, asc, desc } from "drizzle-orm";
+import { Param } from "drizzle-orm/sql";
+import { describe, expect, it } from "vitest";
 
 import {
   databricksTable,
@@ -12,19 +12,19 @@ import {
   DatabricksInsertBuilder,
   DatabricksUpdateBuilder,
   DatabricksDeleteBase,
-} from '../../src';
+} from "../../src";
 
-const users = databricksTable('users', {
-  id: string('id'),
-  name: string('name'),
-  age: int('age'),
-  active: boolean('active'),
+const users = databricksTable("users", {
+  id: string("id"),
+  name: string("name"),
+  age: int("age"),
+  active: boolean("active"),
 });
 
-const posts = databricksTable('posts', {
-  id: int('id'),
-  userId: string('user_id'),
-  title: string('title'),
+const posts = databricksTable("posts", {
+  id: int("id"),
+  userId: string("user_id"),
+  title: string("title"),
 });
 
 function toSQL(sqlObj: any): { sql: string; params: unknown[] } {
@@ -33,10 +33,10 @@ function toSQL(sqlObj: any): { sql: string; params: unknown[] } {
   return { sql: compiled.sql, params: compiled.params };
 }
 
-describe('Select query builder', () => {
+describe("Select query builder", () => {
   const dialect = new DatabricksDialect();
 
-  it('builds SELECT * FROM table', () => {
+  it("builds SELECT * FROM table", () => {
     const selectConfig = {
       withList: undefined,
       fields: { id: users.id, name: users.name, age: users.age, active: users.active },
@@ -51,23 +51,23 @@ describe('Select query builder', () => {
     };
     const query = dialect.buildSelectQuery(selectConfig);
     const compiled = dialect.sqlToQuery(query);
-    expect(compiled.sql).toBe('select `id`, `name`, `age`, `active` from `users`');
+    expect(compiled.sql).toBe("select `id`, `name`, `age`, `active` from `users`");
     expect(compiled.params).toEqual([]);
   });
 
-  it('builds SELECT with WHERE clause', () => {
+  it("builds SELECT with WHERE clause", () => {
     const query = dialect.buildSelectQuery({
       fields: { id: users.id, name: users.name },
       table: users,
-      where: eq(users.id, 'u1'),
+      where: eq(users.id, "u1"),
       setOperators: [],
     });
     const compiled = dialect.sqlToQuery(query);
-    expect(compiled.sql).toBe('select `id`, `name` from `users` where `users`.`id` = ?');
-    expect(compiled.params).toEqual(['u1']);
+    expect(compiled.sql).toBe("select `id`, `name` from `users` where `users`.`id` = ?");
+    expect(compiled.params).toEqual(["u1"]);
   });
 
-  it('builds SELECT with ORDER BY and LIMIT', () => {
+  it("builds SELECT with ORDER BY and LIMIT", () => {
     const query = dialect.buildSelectQuery({
       fields: { id: users.id, name: users.name, age: users.age },
       table: users,
@@ -77,12 +77,12 @@ describe('Select query builder', () => {
     });
     const compiled = dialect.sqlToQuery(query);
     expect(compiled.sql).toBe(
-      'select `id`, `name`, `age` from `users` order by `users`.`age` desc limit ?',
+      "select `id`, `name`, `age` from `users` order by `users`.`age` desc limit ?",
     );
     expect(compiled.params).toEqual([10]);
   });
 
-  it('builds SELECT DISTINCT', () => {
+  it("builds SELECT DISTINCT", () => {
     const query = dialect.buildSelectQuery({
       fields: { name: users.name },
       table: users,
@@ -90,11 +90,11 @@ describe('Select query builder', () => {
       setOperators: [],
     });
     const compiled = dialect.sqlToQuery(query);
-    expect(compiled.sql).toBe('select distinct `name` from `users`');
+    expect(compiled.sql).toBe("select distinct `name` from `users`");
   });
 
-  it('builds SELECT with GROUP BY and HAVING', () => {
-    const cnt = sql<number>`count(*)`.as('cnt');
+  it("builds SELECT with GROUP BY and HAVING", () => {
+    const cnt = sql<number>`count(*)`.as("cnt");
     const query = dialect.buildSelectQuery({
       fields: { active: users.active, cnt },
       table: users,
@@ -103,11 +103,11 @@ describe('Select query builder', () => {
       setOperators: [],
     });
     const compiled = dialect.sqlToQuery(query);
-    expect(compiled.sql).toContain('group by');
-    expect(compiled.sql).toContain('having');
+    expect(compiled.sql).toContain("group by");
+    expect(compiled.sql).toContain("having");
   });
 
-  it('builds SELECT with OFFSET', () => {
+  it("builds SELECT with OFFSET", () => {
     const query = dialect.buildSelectQuery({
       fields: { id: users.id },
       table: users,
@@ -116,21 +116,21 @@ describe('Select query builder', () => {
       setOperators: [],
     });
     const compiled = dialect.sqlToQuery(query);
-    expect(compiled.sql).toBe('select `id` from `users` limit ? offset ?');
+    expect(compiled.sql).toBe("select `id` from `users` limit ? offset ?");
     expect(compiled.params).toEqual([5, 10]);
   });
 });
 
-describe('Insert query builder', () => {
+describe("Insert query builder", () => {
   const dialect = new DatabricksDialect();
 
-  it('builds INSERT with single row', () => {
+  it("builds INSERT with single row", () => {
     const { sql: insertSql } = dialect.buildInsertQuery({
       table: users,
       values: [
         {
-          id: new Param('u1', users.id),
-          name: new Param('Alice', users.name),
+          id: new Param("u1", users.id),
+          name: new Param("Alice", users.name),
           age: new Param(30, users.age),
           active: new Param(true, users.active),
         },
@@ -138,24 +138,24 @@ describe('Insert query builder', () => {
     });
     const compiled = dialect.sqlToQuery(insertSql);
     expect(compiled.sql).toBe(
-      'insert into `users` (`id`, `name`, `age`, `active`) values (?, ?, ?, ?)',
+      "insert into `users` (`id`, `name`, `age`, `active`) values (?, ?, ?, ?)",
     );
-    expect(compiled.params).toEqual(['u1', 'Alice', 30, true]);
+    expect(compiled.params).toEqual(["u1", "Alice", 30, true]);
   });
 
-  it('builds INSERT with multiple rows', () => {
+  it("builds INSERT with multiple rows", () => {
     const { sql: insertSql } = dialect.buildInsertQuery({
       table: users,
       values: [
         {
-          id: new Param('u1', users.id),
-          name: new Param('Alice', users.name),
+          id: new Param("u1", users.id),
+          name: new Param("Alice", users.name),
           age: new Param(30, users.age),
           active: new Param(true, users.active),
         },
         {
-          id: new Param('u2', users.id),
-          name: new Param('Bob', users.name),
+          id: new Param("u2", users.id),
+          name: new Param("Bob", users.name),
           age: new Param(25, users.age),
           active: new Param(false, users.active),
         },
@@ -163,29 +163,29 @@ describe('Insert query builder', () => {
     });
     const compiled = dialect.sqlToQuery(insertSql);
     expect(compiled.sql).toBe(
-      'insert into `users` (`id`, `name`, `age`, `active`) values (?, ?, ?, ?), (?, ?, ?, ?)',
+      "insert into `users` (`id`, `name`, `age`, `active`) values (?, ?, ?, ?), (?, ?, ?, ?)",
     );
-    expect(compiled.params).toEqual(['u1', 'Alice', 30, true, 'u2', 'Bob', 25, false]);
+    expect(compiled.params).toEqual(["u1", "Alice", 30, true, "u2", "Bob", 25, false]);
   });
 });
 
-describe('Update query builder', () => {
+describe("Update query builder", () => {
   const dialect = new DatabricksDialect();
 
-  it('builds UPDATE with SET and WHERE', () => {
+  it("builds UPDATE with SET and WHERE", () => {
     const query = dialect.buildUpdateQuery({
       table: users,
       set: {
-        name: new Param('Alicia', users.name),
+        name: new Param("Alicia", users.name),
       },
-      where: eq(users.id, 'u1'),
+      where: eq(users.id, "u1"),
     });
     const compiled = dialect.sqlToQuery(query);
-    expect(compiled.sql).toBe('update `users` set `name` = ? where `users`.`id` = ?');
-    expect(compiled.params).toEqual(['Alicia', 'u1']);
+    expect(compiled.sql).toBe("update `users` set `name` = ? where `users`.`id` = ?");
+    expect(compiled.params).toEqual(["Alicia", "u1"]);
   });
 
-  it('builds UPDATE without WHERE (all rows)', () => {
+  it("builds UPDATE without WHERE (all rows)", () => {
     const query = dialect.buildUpdateQuery({
       table: users,
       set: {
@@ -193,35 +193,35 @@ describe('Update query builder', () => {
       },
     });
     const compiled = dialect.sqlToQuery(query);
-    expect(compiled.sql).toBe('update `users` set `active` = ?');
+    expect(compiled.sql).toBe("update `users` set `active` = ?");
     expect(compiled.params).toEqual([false]);
   });
 });
 
-describe('Delete query builder', () => {
+describe("Delete query builder", () => {
   const dialect = new DatabricksDialect();
 
-  it('builds DELETE with WHERE', () => {
+  it("builds DELETE with WHERE", () => {
     const query = dialect.buildDeleteQuery({
       table: users,
-      where: eq(users.id, 'u1'),
+      where: eq(users.id, "u1"),
     });
     const compiled = dialect.sqlToQuery(query);
-    expect(compiled.sql).toBe('delete from `users` where `users`.`id` = ?');
-    expect(compiled.params).toEqual(['u1']);
+    expect(compiled.sql).toBe("delete from `users` where `users`.`id` = ?");
+    expect(compiled.params).toEqual(["u1"]);
   });
 
-  it('builds DELETE without WHERE', () => {
+  it("builds DELETE without WHERE", () => {
     const query = dialect.buildDeleteQuery({
       table: users,
     });
     const compiled = dialect.sqlToQuery(query);
-    expect(compiled.sql).toBe('delete from `users`');
+    expect(compiled.sql).toBe("delete from `users`");
   });
 });
 
-describe('Database query builder integration (mocked)', () => {
-  it('db.select().from(table) generates correct SQL', async () => {
+describe("Database query builder integration (mocked)", () => {
+  it("db.select().from(table) generates correct SQL", async () => {
     const dialect = new DatabricksDialect();
 
     const builder = new DatabricksSelectBuilder({
@@ -231,10 +231,10 @@ describe('Database query builder integration (mocked)', () => {
     });
     const selectBase = builder.from(users);
     const compiled = selectBase.toSQL();
-    expect(compiled.sql).toBe('select `id`, `name`, `age`, `active` from `users`');
+    expect(compiled.sql).toBe("select `id`, `name`, `age`, `active` from `users`");
   });
 
-  it('db.select(partial).from(table).where() generates correct SQL', async () => {
+  it("db.select(partial).from(table).where() generates correct SQL", async () => {
     const dialect = new DatabricksDialect();
 
     const builder = new DatabricksSelectBuilder({
@@ -244,45 +244,43 @@ describe('Database query builder integration (mocked)', () => {
     });
     const selectBase = builder.from(users).where(eq(users.active, true));
     const compiled = selectBase.toSQL();
-    expect(compiled.sql).toBe(
-      'select `id`, `name` from `users` where `users`.`active` = ?',
-    );
+    expect(compiled.sql).toBe("select `id`, `name` from `users` where `users`.`active` = ?");
     expect(compiled.params).toEqual([true]);
   });
 
-  it('db.insert(table).values() generates correct SQL', () => {
+  it("db.insert(table).values() generates correct SQL", () => {
     const dialect = new DatabricksDialect();
 
     const builder = new DatabricksInsertBuilder(users, null as any, dialect);
-    const insertBase = builder.values({ id: 'u1', name: 'Alice', age: 30, active: true });
+    const insertBase = builder.values({ id: "u1", name: "Alice", age: 30, active: true });
     const compiled = insertBase.toSQL();
     expect(compiled.sql).toBe(
-      'insert into `users` (`id`, `name`, `age`, `active`) values (?, ?, ?, ?)',
+      "insert into `users` (`id`, `name`, `age`, `active`) values (?, ?, ?, ?)",
     );
-    expect(compiled.params).toEqual(['u1', 'Alice', 30, true]);
+    expect(compiled.params).toEqual(["u1", "Alice", 30, true]);
   });
 
-  it('db.update(table).set().where() generates correct SQL', () => {
+  it("db.update(table).set().where() generates correct SQL", () => {
     const dialect = new DatabricksDialect();
 
     const builder = new DatabricksUpdateBuilder(users, null as any, dialect);
-    const updateBase = builder.set({ name: 'Alicia' }).where(eq(users.id, 'u1'));
+    const updateBase = builder.set({ name: "Alicia" }).where(eq(users.id, "u1"));
     const compiled = updateBase.toSQL();
-    expect(compiled.sql).toBe('update `users` set `name` = ? where `users`.`id` = ?');
-    expect(compiled.params).toEqual(['Alicia', 'u1']);
+    expect(compiled.sql).toBe("update `users` set `name` = ? where `users`.`id` = ?");
+    expect(compiled.params).toEqual(["Alicia", "u1"]);
   });
 
-  it('db.delete(table).where() generates correct SQL', () => {
+  it("db.delete(table).where() generates correct SQL", () => {
     const dialect = new DatabricksDialect();
 
     const deleteBase = new DatabricksDeleteBase(users, null as any, dialect);
-    deleteBase.where(eq(users.id, 'u1'));
+    deleteBase.where(eq(users.id, "u1"));
     const compiled = deleteBase.toSQL();
-    expect(compiled.sql).toBe('delete from `users` where `users`.`id` = ?');
-    expect(compiled.params).toEqual(['u1']);
+    expect(compiled.sql).toBe("delete from `users` where `users`.`id` = ?");
+    expect(compiled.params).toEqual(["u1"]);
   });
 
-  it('db.select().from().orderBy().limit().offset() generates correct SQL', () => {
+  it("db.select().from().orderBy().limit().offset() generates correct SQL", () => {
     const dialect = new DatabricksDialect();
 
     const builder = new DatabricksSelectBuilder({
@@ -298,26 +296,26 @@ describe('Database query builder integration (mocked)', () => {
       .offset(20);
     const compiled = selectBase.toSQL();
     expect(compiled.sql).toBe(
-      'select `id`, `name`, `age`, `active` from `users` where `users`.`active` = ? order by `users`.`age` desc limit ? offset ?',
+      "select `id`, `name`, `age`, `active` from `users` where `users`.`active` = ? order by `users`.`age` desc limit ? offset ?",
     );
     expect(compiled.params).toEqual([true, 10, 20]);
   });
 
-  it('db.insert(table).values([...]) generates correct SQL for multiple rows', () => {
+  it("db.insert(table).values([...]) generates correct SQL for multiple rows", () => {
     const dialect = new DatabricksDialect();
 
     const builder = new DatabricksInsertBuilder(users, null as any, dialect);
     const insertBase = builder.values([
-      { id: 'u1', name: 'Alice', age: 30, active: true },
-      { id: 'u2', name: 'Bob', age: 25, active: false },
+      { id: "u1", name: "Alice", age: 30, active: true },
+      { id: "u2", name: "Bob", age: 25, active: false },
     ]);
     const compiled = insertBase.toSQL();
     expect(compiled.sql).toBe(
-      'insert into `users` (`id`, `name`, `age`, `active`) values (?, ?, ?, ?), (?, ?, ?, ?)',
+      "insert into `users` (`id`, `name`, `age`, `active`) values (?, ?, ?, ?), (?, ?, ?, ?)",
     );
   });
 
-  it('db.selectDistinct().from(table) generates correct SQL', () => {
+  it("db.selectDistinct().from(table) generates correct SQL", () => {
     const dialect = new DatabricksDialect();
 
     const builder = new DatabricksSelectBuilder({
@@ -328,6 +326,6 @@ describe('Database query builder integration (mocked)', () => {
     });
     const selectBase = builder.from(users);
     const compiled = selectBase.toSQL();
-    expect(compiled.sql).toBe('select distinct `name` from `users`');
+    expect(compiled.sql).toBe("select distinct `name` from `users`");
   });
 });

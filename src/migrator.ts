@@ -1,15 +1,15 @@
-import { sql } from 'drizzle-orm';
-import type { MigrationConfig } from 'drizzle-orm/migrator';
-import { readMigrationFiles } from 'drizzle-orm/migrator';
+import { sql } from "drizzle-orm";
+import type { MigrationConfig } from "drizzle-orm/migrator";
+import { readMigrationFiles } from "drizzle-orm/migrator";
 
-import type { DatabricksDatabase } from './driver';
+import type { DatabricksDatabase } from "./driver";
 
 export async function migrate<TSchema extends Record<string, unknown>>(
   db: DatabricksDatabase<TSchema>,
   config: MigrationConfig,
 ): Promise<void> {
   const migrations = readMigrationFiles(config);
-  const migrationsTable = config.migrationsTable ?? '__drizzle_migrations';
+  const migrationsTable = config.migrationsTable ?? "__drizzle_migrations";
 
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS ${sql.identifier(migrationsTable)} (

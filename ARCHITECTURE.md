@@ -60,6 +60,7 @@ Drizzle's type system has `Dialect = 'pg' | 'mysql' | 'sqlite' | 'common'`. We u
 ### Session management
 
 `SessionManager` handles the `@databricks/sql` driver lifecycle:
+
 - Lazy client/session creation (cold start is 2-6s for serverless warehouses)
 - Stale session detection and automatic retry
 - Clean shutdown of sessions and owned clients

@@ -16,27 +16,27 @@ import {
   notInArray,
   or,
   sql,
-} from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+} from "drizzle-orm";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { boolean, databricksTable, double, int, string } from '../../src';
-import { closeDb, dropTable, getDb, hasCredentials } from './helpers';
+import { boolean, databricksTable, double, int, string } from "../../src";
+import { closeDb, dropTable, getDb, hasCredentials } from "./helpers";
 
-const tableName = 'qb_edge';
+const tableName = "qb_edge";
 
 const items = databricksTable(tableName, {
-  id: string('id'),
-  name: string('name'),
-  value: int('value'),
-  active: boolean('active'),
-  score: double('score'),
+  id: string("id"),
+  name: string("name"),
+  value: int("value"),
+  active: boolean("active"),
+  score: double("score"),
 });
 
-const bt = (n: string) => '`' + n + '`';
+const bt = (n: string) => "`" + n + "`";
 
-const SEED_IDS = ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08'] as const;
+const SEED_IDS = ["s01", "s02", "s03", "s04", "s05", "s06", "s07", "s08"] as const;
 
-describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
+describe.skipIf(!hasCredentials())("Query builder edge cases (e2e)", () => {
   beforeAll(async () => {
     const db = getDb();
     await dropTable(db, tableName);
@@ -76,28 +76,28 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
   });
 
   // 1. Empty result from SELECT
-  it('returns an empty array when WHERE matches nothing', async () => {
+  it("returns an empty array when WHERE matches nothing", async () => {
     const db = getDb();
-    const rows = await db.select().from(items).where(eq(items.id, 'no-such-id'));
+    const rows = await db.select().from(items).where(eq(items.id, "no-such-id"));
     expect(rows).toEqual([]);
   });
 
   // 2. NULL handling in WHERE — isNull / isNotNull
-  it('isNull / isNotNull select NULL rows correctly', async () => {
+  it("isNull / isNotNull select NULL rows correctly", async () => {
     const db = getDb();
     const nullRows = await db.select({ id: items.id }).from(items).where(isNull(items.name));
     expect(nullRows).toHaveLength(1);
-    expect(nullRows[0]!.id).toBe('s04');
+    expect(nullRows[0]!.id).toBe("s04");
 
     const notNullRows = await db.select({ id: items.id }).from(items).where(isNotNull(items.name));
     expect(notNullRows).toHaveLength(7);
-    expect(notNullRows.every((r) => r.id !== 's04')).toBe(true);
+    expect(notNullRows.every((r) => r.id !== "s04")).toBe(true);
   });
 
   // 3. NULL values through query builder — select returns null
-  it('selects NULL values back as null in result', async () => {
+  it("selects NULL values back as null in result", async () => {
     const db = getDb();
-    const rows = await db.select().from(items).where(eq(items.id, 's04'));
+    const rows = await db.select().from(items).where(eq(items.id, "s04"));
     expect(rows).toHaveLength(1);
     expect(rows[0]!.name).toBeNull();
     expect(rows[0]!.value).toBeNull();
@@ -106,27 +106,24 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
   });
 
   // 4. Empty string vs NULL
-  it('treats empty string as not-null and distinct from NULL', async () => {
+  it("treats empty string as not-null and distinct from NULL", async () => {
     const db = getDb();
-    const rows = await db.select().from(items).where(eq(items.id, 's02'));
+    const rows = await db.select().from(items).where(eq(items.id, "s02"));
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.name).toBe('');
+    expect(rows[0]!.name).toBe("");
     expect(rows[0]!.name).not.toBeNull();
 
     // Empty string should be returned by isNotNull
-    const notNullNames = await db
-      .select({ id: items.id })
-      .from(items)
-      .where(isNotNull(items.name));
-    expect(notNullNames.map((r) => r.id)).toContain('s02');
+    const notNullNames = await db.select({ id: items.id }).from(items).where(isNotNull(items.name));
+    expect(notNullNames.map((r) => r.id)).toContain("s02");
   });
 
   // 5. Zero values — 0 distinct from null
-  it('zero values are distinct from NULL', async () => {
+  it("zero values are distinct from NULL", async () => {
     const db = getDb();
     const rows = await db.select().from(items).where(eq(items.value, 0));
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.id).toBe('s02');
+    expect(rows[0]!.id).toBe("s02");
     expect(rows[0]!.value).toBe(0);
     expect(rows[0]!.score).toBe(0);
 
@@ -135,16 +132,19 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
       .from(items)
       .where(and(eq(items.value, 0), isNotNull(items.value)));
     expect(zeroNotNull).toHaveLength(1);
-    expect(zeroNotNull[0]!.id).toBe('s02');
+    expect(zeroNotNull[0]!.id).toBe("s02");
   });
 
   // 6. Negative numbers
-  it('queries negative integers and doubles correctly', async () => {
+  it("queries negative integers and doubles correctly", async () => {
     const db = getDb();
-    const negInts = await db.select({ id: items.id, value: items.value }).from(items).where(lt(items.value, 0));
+    const negInts = await db
+      .select({ id: items.id, value: items.value })
+      .from(items)
+      .where(lt(items.value, 0));
     expect(negInts.length).toBeGreaterThanOrEqual(2);
     expect(negInts.every((r) => (r.value ?? 0) < 0)).toBe(true);
-    expect(negInts.map((r) => r.id).sort()).toEqual(expect.arrayContaining(['s03', 's06']));
+    expect(negInts.map((r) => r.id).sort()).toEqual(expect.arrayContaining(["s03", "s06"]));
 
     const negDoubles = await db
       .select({ id: items.id, score: items.score })
@@ -155,38 +155,38 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
   });
 
   // 7. Very large numbers near INT range
-  it('handles INT values near the 32-bit boundary', async () => {
+  it("handles INT values near the 32-bit boundary", async () => {
     const db = getDb();
     const rows = await db
       .select({ id: items.id, value: items.value })
       .from(items)
       .where(gte(items.value, 2_000_000_000));
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.id).toBe('s05');
-    expect(typeof rows[0]!.value).toBe('number');
+    expect(rows[0]!.id).toBe("s05");
+    expect(typeof rows[0]!.value).toBe("number");
     expect(rows[0]!.value).toBe(2147483000);
   });
 
   // 8. Large result sets — insert 100, select all
-  it('handles large result sets (100 rows)', async () => {
+  it("handles large result sets (100 rows)", async () => {
     const db = getDb();
-    const bulkTable = 'qb_edge_bulk';
+    const bulkTable = "qb_edge_bulk";
     await dropTable(db, bulkTable);
     await db.execute(
-      sql.raw(
-        `CREATE TABLE IF NOT EXISTS ${bt(bulkTable)} (id STRING, value INT) USING DELTA`,
-      ),
+      sql.raw(`CREATE TABLE IF NOT EXISTS ${bt(bulkTable)} (id STRING, value INT) USING DELTA`),
     );
     try {
       const tuples: string[] = [];
       for (let i = 0; i < 100; i++) {
-        tuples.push(`('b${String(i).padStart(3, '0')}', ${i})`);
+        tuples.push(`('b${String(i).padStart(3, "0")}', ${i})`);
       }
-      await db.execute(sql.raw(`INSERT INTO ${bt(bulkTable)} (id, value) VALUES ${tuples.join(', ')}`));
+      await db.execute(
+        sql.raw(`INSERT INTO ${bt(bulkTable)} (id, value) VALUES ${tuples.join(", ")}`),
+      );
 
       const bulk = databricksTable(bulkTable, {
-        id: string('id'),
-        value: int('value'),
+        id: string("id"),
+        value: int("value"),
       });
 
       const rows = await db.select().from(bulk);
@@ -199,42 +199,44 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
   });
 
   // 9. LIMIT 0
-  it('LIMIT 0 returns an empty array', async () => {
+  it("LIMIT 0 returns an empty array", async () => {
     const db = getDb();
     const rows = await db.select().from(items).limit(0);
     expect(rows).toEqual([]);
   });
 
   // 10. OFFSET larger than result set
-  it('OFFSET greater than result set returns an empty array', async () => {
+  it("OFFSET greater than result set returns an empty array", async () => {
     const db = getDb();
     const rows = await db.select().from(items).orderBy(asc(items.id)).limit(10).offset(1000);
     expect(rows).toEqual([]);
   });
 
   // 11. Special characters in string values — quotes, backticks, newlines, unicode emoji
-  it('round-trips special characters in string values', async () => {
+  it("round-trips special characters in string values", async () => {
     const db = getDb();
-    const specialTable = 'qb_edge_special';
+    const specialTable = "qb_edge_special";
     await dropTable(db, specialTable);
     await db.execute(
-      sql.raw(`CREATE TABLE IF NOT EXISTS ${bt(specialTable)} (id STRING, name STRING) USING DELTA`),
+      sql.raw(
+        `CREATE TABLE IF NOT EXISTS ${bt(specialTable)} (id STRING, name STRING) USING DELTA`,
+      ),
     );
     try {
       const sp = databricksTable(specialTable, {
-        id: string('id'),
-        name: string('name'),
+        id: string("id"),
+        name: string("name"),
       });
 
       const cases: Array<{ id: string; name: string }> = [
-        { id: 'q1', name: "single 'quote' inside" },
-        { id: 'q2', name: 'double "quote" inside' },
-        { id: 'q3', name: 'back`tick`s' },
-        { id: 'q4', name: 'multi\nline\nstring' },
-        { id: 'q5', name: 'tab\tseparated' },
-        { id: 'q6', name: 'emoji rocket and party' },
-        { id: 'q7', name: 'unicode greek alpha-beta-gamma' },
-        { id: 'q8', name: 'backslash\\nliteral' },
+        { id: "q1", name: "single 'quote' inside" },
+        { id: "q2", name: 'double "quote" inside' },
+        { id: "q3", name: "back`tick`s" },
+        { id: "q4", name: "multi\nline\nstring" },
+        { id: "q5", name: "tab\tseparated" },
+        { id: "q6", name: "emoji rocket and party" },
+        { id: "q7", name: "unicode greek alpha-beta-gamma" },
+        { id: "q8", name: "backslash\\nliteral" },
       ];
       for (const c of cases) {
         await db.insert(sp).values(c);
@@ -251,35 +253,30 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
   });
 
   // 12. Boolean false vs NULL
-  it('boolean false is not treated as NULL', async () => {
+  it("boolean false is not treated as NULL", async () => {
     const db = getDb();
-    const falseRows = await db
-      .select({ id: items.id })
-      .from(items)
-      .where(eq(items.active, false));
+    const falseRows = await db.select({ id: items.id }).from(items).where(eq(items.active, false));
     const ids = falseRows.map((r) => r.id).sort();
     // s02, s06, s08 are false; s04 is NULL and must NOT be included
-    expect(ids).toEqual(['s02', 's06', 's08']);
-    expect(ids).not.toContain('s04');
+    expect(ids).toEqual(["s02", "s06", "s08"]);
+    expect(ids).not.toContain("s04");
 
     const notNullActive = await db
       .select({ id: items.id })
       .from(items)
       .where(isNotNull(items.active));
-    expect(notNullActive.map((r) => r.id)).not.toContain('s04');
-    expect(notNullActive.map((r) => r.id)).toEqual(
-      expect.arrayContaining(['s02', 's06', 's08']),
-    );
+    expect(notNullActive.map((r) => r.id)).not.toContain("s04");
+    expect(notNullActive.map((r) => r.id)).toEqual(expect.arrayContaining(["s02", "s06", "s08"]));
   });
 
   // 13. Multiple sequential operations: insert, select, update, select, delete, select
-  it('runs insert -> select -> update -> select -> delete -> select sequentially', async () => {
+  it("runs insert -> select -> update -> select -> delete -> select sequentially", async () => {
     const db = getDb();
-    const rowId = 'seq01';
+    const rowId = "seq01";
 
     await db.insert(items).values({
       id: rowId,
-      name: 'sequential',
+      name: "sequential",
       value: 42,
       active: true,
       score: 4.2,
@@ -287,15 +284,15 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
 
     const afterInsert = await db.select().from(items).where(eq(items.id, rowId));
     expect(afterInsert).toHaveLength(1);
-    expect(afterInsert[0]!.name).toBe('sequential');
+    expect(afterInsert[0]!.name).toBe("sequential");
     expect(afterInsert[0]!.value).toBe(42);
 
-    await db.update(items).set({ value: 99, name: 'updated' }).where(eq(items.id, rowId));
+    await db.update(items).set({ value: 99, name: "updated" }).where(eq(items.id, rowId));
 
     const afterUpdate = await db.select().from(items).where(eq(items.id, rowId));
     expect(afterUpdate).toHaveLength(1);
     expect(afterUpdate[0]!.value).toBe(99);
-    expect(afterUpdate[0]!.name).toBe('updated');
+    expect(afterUpdate[0]!.name).toBe("updated");
 
     await db.delete(items).where(eq(items.id, rowId));
 
@@ -304,19 +301,19 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
   });
 
   // 14. SELECT with sql`` template fragment in where
-  it('accepts a raw sql`` fragment in where()', async () => {
+  it("accepts a raw sql`` fragment in where()", async () => {
     const db = getDb();
     const rows = await db
       .select()
       .from(items)
-      .where(sql`${items.id} = ${'s01'}`);
+      .where(sql`${items.id} = ${"s01"}`);
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.id).toBe('s01');
-    expect(rows[0]!.name).toBe('alpha');
+    expect(rows[0]!.id).toBe("s01");
+    expect(rows[0]!.name).toBe("alpha");
   });
 
   // 15. BETWEEN
-  it('BETWEEN returns inclusive range', async () => {
+  it("BETWEEN returns inclusive range", async () => {
     const db = getDb();
     const rows = await db
       .select({ id: items.id, value: items.value })
@@ -324,49 +321,46 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
       .where(between(items.value, 5, 100));
     const ids = rows.map((r) => r.id).sort();
     // s01 (10), s07 (100), s08 (50) match — s02 (0) excluded, s05 too large
-    expect(ids).toEqual(['s01', 's07', 's08']);
+    expect(ids).toEqual(["s01", "s07", "s08"]);
     expect(rows.every((r) => (r.value ?? 0) >= 5 && (r.value ?? 0) <= 100)).toBe(true);
   });
 
   // 16. IN ARRAY
-  it('inArray matches any of the listed values', async () => {
+  it("inArray matches any of the listed values", async () => {
     const db = getDb();
     const rows = await db
       .select({ id: items.id })
       .from(items)
-      .where(inArray(items.id, ['s01', 's03', 's07']));
+      .where(inArray(items.id, ["s01", "s03", "s07"]));
     const ids = rows.map((r) => r.id).sort();
-    expect(ids).toEqual(['s01', 's03', 's07']);
+    expect(ids).toEqual(["s01", "s03", "s07"]);
   });
 
   // 17. NOT IN ARRAY
-  it('notInArray excludes the listed values', async () => {
+  it("notInArray excludes the listed values", async () => {
     const db = getDb();
     const rows = await db
       .select({ id: items.id })
       .from(items)
-      .where(notInArray(items.id, ['s01', 's02', 's03', 's04']));
+      .where(notInArray(items.id, ["s01", "s02", "s03", "s04"]));
     const ids = rows.map((r) => r.id).sort();
     // NULLs (s04) are typically excluded by NOT IN even when not in the list, but s04's id is the
     // exclusion list, so we expect the remaining non-NULL-id rows.
-    expect(ids).toEqual(['s05', 's06', 's07', 's08']);
+    expect(ids).toEqual(["s05", "s06", "s07", "s08"]);
   });
 
   // 18. Complex nested AND/OR
-  it('evaluates nested and(or(...), gt(...))', async () => {
+  it("evaluates nested and(or(...), gt(...))", async () => {
     const db = getDb();
     const rows = await db
       .select({ id: items.id, value: items.value, active: items.active })
       .from(items)
       .where(
-        and(
-          or(eq(items.id, 's01'), eq(items.id, 's07'), eq(items.id, 's08')),
-          gt(items.value, 20),
-        ),
+        and(or(eq(items.id, "s01"), eq(items.id, "s07"), eq(items.id, "s08")), gt(items.value, 20)),
       );
     const ids = rows.map((r) => r.id).sort();
     // s01 value=10 fails gt; s07 value=100 ok; s08 value=50 ok
-    expect(ids).toEqual(['s07', 's08']);
+    expect(ids).toEqual(["s07", "s08"]);
 
     // Add a more nested expression
     const rows2 = await db
@@ -380,30 +374,30 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
       );
     const ids2 = rows2.map((r) => r.id).sort();
     // active=true & value>50: s05, s07; active=false & value<0: s06
-    expect(ids2).toEqual(['s05', 's06', 's07']);
+    expect(ids2).toEqual(["s05", "s06", "s07"]);
   });
 
   // 19. Double / float precision round-trip
-  it('round-trips double precision values', async () => {
+  it("round-trips double precision values", async () => {
     const db = getDb();
-    const precTable = 'qb_edge_prec';
+    const precTable = "qb_edge_prec";
     await dropTable(db, precTable);
     await db.execute(
       sql.raw(`CREATE TABLE IF NOT EXISTS ${bt(precTable)} (id STRING, score DOUBLE) USING DELTA`),
     );
     try {
       const prec = databricksTable(precTable, {
-        id: string('id'),
-        score: double('score'),
+        id: string("id"),
+        score: double("score"),
       });
 
       const samples: Array<{ id: string; score: number }> = [
-        { id: 'p1', score: 0.1 + 0.2 },
-        { id: 'p2', score: Math.PI },
-        { id: 'p3', score: -Math.E },
-        { id: 'p4', score: 1.234567890123456 },
-        { id: 'p5', score: 1e-10 },
-        { id: 'p6', score: 1.5e8 },
+        { id: "p1", score: 0.1 + 0.2 },
+        { id: "p2", score: Math.PI },
+        { id: "p3", score: -Math.E },
+        { id: "p4", score: 1.234567890123456 },
+        { id: "p5", score: 1e-10 },
+        { id: "p6", score: 1.5e8 },
       ];
       for (const s of samples) {
         await db.insert(prec).values(s);
@@ -413,7 +407,7 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
       for (const s of samples) {
         const row = rows.find((r) => r.id === s.id);
         expect(row).toBeDefined();
-        expect(typeof row!.score).toBe('number');
+        expect(typeof row!.score).toBe("number");
         expect(row!.score).toBeCloseTo(s.score, 10);
       }
     } finally {
@@ -422,7 +416,7 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
   });
 
   // 20. ORDER BY with NULLs — verify sort is consistent
-  it('ORDER BY places NULLs consistently', async () => {
+  it("ORDER BY places NULLs consistently", async () => {
     const db = getDb();
     const ascRows = await db
       .select({ id: items.id, value: items.value })
@@ -477,31 +471,28 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
   });
 
   // Bonus: like with special characters
-  it('LIKE handles wildcard pattern matches', async () => {
+  it("LIKE handles wildcard pattern matches", async () => {
     const db = getDb();
     const rows = await db
       .select({ id: items.id, name: items.name })
       .from(items)
-      .where(like(items.name, '%a%'));
+      .where(like(items.name, "%a%"));
     // alpha, gamma, delta, eta, zeta all contain 'a'
     expect(rows.length).toBeGreaterThanOrEqual(4);
-    expect(rows.every((r) => (r.name ?? '').includes('a'))).toBe(true);
+    expect(rows.every((r) => (r.name ?? "").includes("a"))).toBe(true);
   });
 
   // Bonus: ne with NULL — SQL semantics: NULL <> x is NULL/false
-  it('ne does not match NULL rows (SQL three-valued logic)', async () => {
+  it("ne does not match NULL rows (SQL three-valued logic)", async () => {
     const db = getDb();
-    const rows = await db
-      .select({ id: items.id })
-      .from(items)
-      .where(ne(items.name, 'alpha'));
+    const rows = await db.select({ id: items.id }).from(items).where(ne(items.name, "alpha"));
     const ids = rows.map((r) => r.id);
-    expect(ids).not.toContain('s04'); // NULL name
-    expect(ids).not.toContain('s01'); // matches 'alpha'
+    expect(ids).not.toContain("s04"); // NULL name
+    expect(ids).not.toContain("s01"); // matches 'alpha'
   });
 
   // Bonus: SELECT DISTINCT with NULLs — NULL is one distinct group
-  it('SELECT DISTINCT treats NULL as a single distinct group', async () => {
+  it("SELECT DISTINCT treats NULL as a single distinct group", async () => {
     const db = getDb();
     const rows = await db.selectDistinct({ active: items.active }).from(items);
     // distinct values: true, false, null -> 3 groups

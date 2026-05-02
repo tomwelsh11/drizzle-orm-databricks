@@ -1,16 +1,16 @@
-import type { ColumnBaseConfig } from 'drizzle-orm/column';
-import type { ColumnBuilderBaseConfig } from 'drizzle-orm/column-builder';
-import { entityKind } from 'drizzle-orm/entity';
-import type { Table } from 'drizzle-orm/table';
-import { DatabricksColumn, DatabricksColumnBuilder } from './common';
+import type { ColumnBaseConfig } from "drizzle-orm/column";
+import type { ColumnBuilderBaseConfig } from "drizzle-orm/column-builder";
+import { entityKind } from "drizzle-orm/entity";
+import type { Table } from "drizzle-orm/table";
+import { DatabricksColumn, DatabricksColumnBuilder } from "./common";
 
 export class DatabricksBinaryBuilder extends DatabricksColumnBuilder<
-  ColumnBuilderBaseConfig<'buffer', 'DatabricksBinary'>
+  ColumnBuilderBaseConfig<"buffer", "DatabricksBinary">
 > {
-  static override readonly [entityKind] = 'DatabricksBinaryBuilder';
+  static override readonly [entityKind] = "DatabricksBinaryBuilder";
 
   constructor(name: string) {
-    super(name, 'buffer', 'DatabricksBinary');
+    super(name, "buffer", "DatabricksBinary");
   }
 
   override build(table: Table): DatabricksBinary {
@@ -19,17 +19,17 @@ export class DatabricksBinaryBuilder extends DatabricksColumnBuilder<
 }
 
 export class DatabricksBinary extends DatabricksColumn<
-  ColumnBaseConfig<'buffer', 'DatabricksBinary'>
+  ColumnBaseConfig<"buffer", "DatabricksBinary">
 > {
-  static override readonly [entityKind] = 'DatabricksBinary';
+  static override readonly [entityKind] = "DatabricksBinary";
 
   getSQLType(): string {
-    return 'BINARY';
+    return "BINARY";
   }
 }
 
 export function binary(): DatabricksBinaryBuilder;
 export function binary(name: string): DatabricksBinaryBuilder;
 export function binary(name?: string): DatabricksBinaryBuilder {
-  return new DatabricksBinaryBuilder(name ?? '');
+  return new DatabricksBinaryBuilder(name ?? "");
 }

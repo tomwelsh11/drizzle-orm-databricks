@@ -1,30 +1,28 @@
-import type { DrizzleConfig } from 'drizzle-orm';
-import { entityKind } from 'drizzle-orm/entity';
-import { DefaultLogger } from 'drizzle-orm/logger';
-import type { SQL, SQLWrapper } from 'drizzle-orm/sql';
+import type { DrizzleConfig } from "drizzle-orm";
+import { entityKind } from "drizzle-orm/entity";
+import { DefaultLogger } from "drizzle-orm/logger";
+import type { SQL, SQLWrapper } from "drizzle-orm/sql";
 
-import { SessionManager } from './connection';
-import { DatabricksDialect } from './dialect';
+import { SessionManager } from "./connection";
+import { DatabricksDialect } from "./dialect";
 import {
   DatabricksDeleteBase,
   DatabricksInsertBuilder,
   DatabricksSelectBuilder,
   DatabricksUpdateBuilder,
-} from './query-builders';
-import { DatabricksSession, type DatabricksRawQueryResult } from './session';
-import type { DatabricksTable } from './table';
+} from "./query-builders";
+import { DatabricksSession, type DatabricksRawQueryResult } from "./session";
+import type { DatabricksTable } from "./table";
 import type {
   DatabricksClientConfig,
   DatabricksConfig,
   DatabricksConnectionConfig,
   DatabricksOAuthConnectionConfig,
   DatabricksTokenConnectionConfig,
-} from './types';
+} from "./types";
 
-export class DatabricksDatabase<
-  TSchema extends Record<string, unknown> = Record<string, never>,
-> {
-  static readonly [entityKind]: string = 'DatabricksDatabase';
+export class DatabricksDatabase<TSchema extends Record<string, unknown> = Record<string, never>> {
+  static readonly [entityKind]: string = "DatabricksDatabase";
 
   constructor(
     /** @internal */

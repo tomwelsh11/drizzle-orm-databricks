@@ -1,12 +1,12 @@
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import * as path from 'node:path';
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 
-import { sql } from 'drizzle-orm';
-import { afterAll, describe, expect, it } from 'vitest';
+import { sql } from "drizzle-orm";
+import { afterAll, describe, expect, it } from "vitest";
 
-import { migrate } from '../../src/migrator';
-import { closeDb, dropTable, getDb, hasCredentials } from './helpers';
+import { migrate } from "../../src/migrator";
+import { closeDb, dropTable, getDb, hasCredentials } from "./helpers";
 
 type JournalEntry = {
   idx: number;
@@ -16,28 +16,23 @@ type JournalEntry = {
   breakpoints: boolean;
 };
 
-function makeMigrationsDir(
-  entries: Array<{ tag: string; when: number; sql: string }>,
-): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'drizzle-databricks-mig-'));
-  fs.mkdirSync(path.join(dir, 'meta'));
+function makeMigrationsDir(entries: Array<{ tag: string; when: number; sql: string }>): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "drizzle-databricks-mig-"));
+  fs.mkdirSync(path.join(dir, "meta"));
 
   const journal: { version: string; dialect: string; entries: JournalEntry[] } = {
-    version: '7',
-    dialect: 'postgresql',
+    version: "7",
+    dialect: "postgresql",
     entries: entries.map((entry, idx) => ({
       idx,
-      version: '7',
+      version: "7",
       when: entry.when,
       tag: entry.tag,
       breakpoints: true,
     })),
   };
 
-  fs.writeFileSync(
-    path.join(dir, 'meta', '_journal.json'),
-    JSON.stringify(journal, null, 2),
-  );
+  fs.writeFileSync(path.join(dir, "meta", "_journal.json"), JSON.stringify(journal, null, 2));
 
   for (const entry of entries) {
     fs.writeFileSync(path.join(dir, `${entry.tag}.sql`), entry.sql);
@@ -50,7 +45,7 @@ function cleanup(dir: string): void {
   fs.rmSync(dir, { recursive: true, force: true });
 }
 
-describe.skipIf(!hasCredentials())('Migrator (e2e)', () => {
+describe.skipIf(!hasCredentials())("Migrator (e2e)", () => {
   const createdTables: string[] = [];
   const createdMigrationsTables: string[] = [];
   const tempDirs: string[] = [];
@@ -77,9 +72,9 @@ describe.skipIf(!hasCredentials())('Migrator (e2e)', () => {
     await closeDb();
   });
 
-  it('creates the migration tracking table when there are no migrations', async () => {
+  it("creates the migration tracking table when there are no migrations", async () => {
     const db = getDb();
-    const migrationsTable = 'mig_track';
+    const migrationsTable = "mig_track";
     createdMigrationsTables.push(migrationsTable);
 
     const dir = makeMigrationsDir([]);
@@ -93,16 +88,16 @@ describe.skipIf(!hasCredentials())('Migrator (e2e)', () => {
     expect(rows).toEqual([]);
   });
 
-  it('applies a migration from disk', async () => {
+  it("applies a migration from disk", async () => {
     const db = getDb();
-    const migrationsTable = 'mig_apply';
-    const tableName = 'migrated';
+    const migrationsTable = "mig_apply";
+    const tableName = "migrated";
     createdMigrationsTables.push(migrationsTable);
     createdTables.push(tableName);
 
     const dir = makeMigrationsDir([
       {
-        tag: '0000_init',
+        tag: "0000_init",
         when: 1700000000000,
         sql: `CREATE TABLE IF NOT EXISTS \`${tableName}\` (id INT, name STRING) USING DELTA;`,
       },
@@ -123,16 +118,16 @@ describe.skipIf(!hasCredentials())('Migrator (e2e)', () => {
     expect(Number(recorded[0]!.created_at)).toBe(1700000000000);
   });
 
-  it('is idempotent across repeated runs', async () => {
+  it("is idempotent across repeated runs", async () => {
     const db = getDb();
-    const migrationsTable = 'mig_idem';
-    const tableName = 'idem';
+    const migrationsTable = "mig_idem";
+    const tableName = "idem";
     createdMigrationsTables.push(migrationsTable);
     createdTables.push(tableName);
 
     const dir = makeMigrationsDir([
       {
-        tag: '0000_init',
+        tag: "0000_init",
         when: 1700000000001,
         sql: `CREATE TABLE IF NOT EXISTS \`${tableName}\` (id INT) USING DELTA;`,
       },
@@ -148,22 +143,22 @@ describe.skipIf(!hasCredentials())('Migrator (e2e)', () => {
     expect(recorded).toHaveLength(1);
   });
 
-  it('applies multiple migrations in order', async () => {
+  it("applies multiple migrations in order", async () => {
     const db = getDb();
-    const migrationsTable = 'mig_multi';
-    const tableA = 'multi_a';
-    const tableB = 'multi_b';
+    const migrationsTable = "mig_multi";
+    const tableA = "multi_a";
+    const tableB = "multi_b";
     createdMigrationsTables.push(migrationsTable);
     createdTables.push(tableA, tableB);
 
     const dir = makeMigrationsDir([
       {
-        tag: '0000_first',
+        tag: "0000_first",
         when: 1700000000100,
         sql: `CREATE TABLE IF NOT EXISTS \`${tableA}\` (id INT) USING DELTA;`,
       },
       {
-        tag: '0001_second',
+        tag: "0001_second",
         when: 1700000000200,
         sql: `CREATE TABLE IF NOT EXISTS \`${tableB}\` (id INT) USING DELTA;`,
       },
@@ -179,12 +174,12 @@ describe.skipIf(!hasCredentials())('Migrator (e2e)', () => {
     expect(Number(recorded[0]!.created_at)).toBe(1700000000100);
     expect(Number(recorded[1]!.created_at)).toBe(1700000000200);
 
-    const tablesA = (await db.execute(
-      sql.raw(`SHOW TABLES LIKE '${tableA}'`),
-    )) as unknown as Array<Record<string, unknown>>;
-    const tablesB = (await db.execute(
-      sql.raw(`SHOW TABLES LIKE '${tableB}'`),
-    )) as unknown as Array<Record<string, unknown>>;
+    const tablesA = (await db.execute(sql.raw(`SHOW TABLES LIKE '${tableA}'`))) as unknown as Array<
+      Record<string, unknown>
+    >;
+    const tablesB = (await db.execute(sql.raw(`SHOW TABLES LIKE '${tableB}'`))) as unknown as Array<
+      Record<string, unknown>
+    >;
     expect(tablesA.length).toBeGreaterThan(0);
     expect(tablesB.length).toBeGreaterThan(0);
   });

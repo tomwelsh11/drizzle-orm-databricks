@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 export interface RecordedStatement {
   sql: string;
@@ -67,16 +67,10 @@ export class MockDBSQLClient {
     return this;
   }
 
-  async openSession(
-    config?: Record<string, unknown>,
-  ): Promise<MockSession> {
+  async openSession(config?: Record<string, unknown>): Promise<MockSession> {
     this.openSessionCalls.push(config);
     if (this.openSessionError) throw this.openSessionError;
-    const session = new MockSession(
-      this.recorded,
-      this.responseQueue,
-      config,
-    );
+    const session = new MockSession(this.recorded, this.responseQueue, config);
     this.sessions.push(session);
     return session;
   }
@@ -100,7 +94,7 @@ export class MockDBSQLClient {
  * the module under test.
  */
 export function installDatabricksMock(client: MockDBSQLClient): void {
-  vi.doMock('@databricks/sql', () => ({
+  vi.doMock("@databricks/sql", () => ({
     DBSQLClient: vi.fn(() => client),
   }));
 }

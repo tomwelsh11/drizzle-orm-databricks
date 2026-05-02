@@ -1,16 +1,16 @@
-import type { ColumnBaseConfig } from 'drizzle-orm/column';
-import type { ColumnBuilderBaseConfig } from 'drizzle-orm/column-builder';
-import { entityKind } from 'drizzle-orm/entity';
-import type { Table } from 'drizzle-orm/table';
-import { DatabricksColumn, DatabricksColumnBuilder } from './common';
+import type { ColumnBaseConfig } from "drizzle-orm/column";
+import type { ColumnBuilderBaseConfig } from "drizzle-orm/column-builder";
+import { entityKind } from "drizzle-orm/entity";
+import type { Table } from "drizzle-orm/table";
+import { DatabricksColumn, DatabricksColumnBuilder } from "./common";
 
 export class DatabricksBigIntBuilder extends DatabricksColumnBuilder<
-  ColumnBuilderBaseConfig<'bigint', 'DatabricksBigInt'>
+  ColumnBuilderBaseConfig<"bigint", "DatabricksBigInt">
 > {
-  static override readonly [entityKind] = 'DatabricksBigIntBuilder';
+  static override readonly [entityKind] = "DatabricksBigIntBuilder";
 
   constructor(name: string) {
-    super(name, 'bigint', 'DatabricksBigInt');
+    super(name, "bigint", "DatabricksBigInt");
   }
 
   override build(table: Table): DatabricksBigInt {
@@ -19,12 +19,12 @@ export class DatabricksBigIntBuilder extends DatabricksColumnBuilder<
 }
 
 export class DatabricksBigInt extends DatabricksColumn<
-  ColumnBaseConfig<'bigint', 'DatabricksBigInt'>
+  ColumnBaseConfig<"bigint", "DatabricksBigInt">
 > {
-  static override readonly [entityKind] = 'DatabricksBigInt';
+  static override readonly [entityKind] = "DatabricksBigInt";
 
   getSQLType(): string {
-    return 'BIGINT';
+    return "BIGINT";
   }
 
   override mapFromDriverValue(value: string | number | bigint): bigint {
@@ -39,5 +39,5 @@ export class DatabricksBigInt extends DatabricksColumn<
 export function bigint(): DatabricksBigIntBuilder;
 export function bigint(name: string): DatabricksBigIntBuilder;
 export function bigint(name?: string): DatabricksBigIntBuilder {
-  return new DatabricksBigIntBuilder(name ?? '');
+  return new DatabricksBigIntBuilder(name ?? "");
 }

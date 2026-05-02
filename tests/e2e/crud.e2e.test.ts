@@ -1,12 +1,12 @@
-import { sql } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { sql } from "drizzle-orm";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { closeDb, dropTable, getDb, hasCredentials } from './helpers';
+import { closeDb, dropTable, getDb, hasCredentials } from "./helpers";
 
-const bt = (n: string) => '`' + n + '`';
+const bt = (n: string) => "`" + n + "`";
 
-describe.skipIf(!hasCredentials())('CRUD operations (e2e)', () => {
-  const tableName = 'e2e_crud';
+describe.skipIf(!hasCredentials())("CRUD operations (e2e)", () => {
+  const tableName = "e2e_crud";
   const tbl = bt(tableName);
 
   beforeAll(async () => {
@@ -33,10 +33,10 @@ describe.skipIf(!hasCredentials())('CRUD operations (e2e)', () => {
     }
   });
 
-  it('inserts a single row and selects it back', async () => {
+  it("inserts a single row and selects it back", async () => {
     const db = getDb();
     await db.execute(
-      sql`INSERT INTO ${sql.raw(tbl)} VALUES (${1}, ${'Alice'}, ${'alice@example.com'}, ${30}, ${true})`,
+      sql`INSERT INTO ${sql.raw(tbl)} VALUES (${1}, ${"Alice"}, ${"alice@example.com"}, ${30}, ${true})`,
     );
     const rows = await db.execute<{
       id: number;
@@ -48,14 +48,14 @@ describe.skipIf(!hasCredentials())('CRUD operations (e2e)', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toEqual({
       id: 1,
-      name: 'Alice',
-      email: 'alice@example.com',
+      name: "Alice",
+      email: "alice@example.com",
       age: 30,
       active: true,
     });
   });
 
-  it('inserts multiple rows in one statement', async () => {
+  it("inserts multiple rows in one statement", async () => {
     const db = getDb();
     await db.execute(
       sql.raw(
@@ -71,7 +71,7 @@ describe.skipIf(!hasCredentials())('CRUD operations (e2e)', () => {
     expect(Number(rows[0]!.cnt)).toBe(4);
   });
 
-  it('selects with parameterised WHERE', async () => {
+  it("selects with parameterised WHERE", async () => {
     const db = getDb();
     const rows = await db.execute<{ id: number; name: string; age: number }>(
       sql`SELECT id, name, age FROM ${sql.raw(tbl)} WHERE age > ${25} ORDER BY id`,
@@ -81,7 +81,7 @@ describe.skipIf(!hasCredentials())('CRUD operations (e2e)', () => {
     expect(rows.length).toBeGreaterThanOrEqual(3);
   });
 
-  it('selects with ORDER BY and LIMIT', async () => {
+  it("selects with ORDER BY and LIMIT", async () => {
     const db = getDb();
     const rows = await db.execute<{ id: number; age: number }>(
       sql`SELECT id, age FROM ${sql.raw(tbl)} ORDER BY age DESC LIMIT ${2}`,
@@ -90,16 +90,16 @@ describe.skipIf(!hasCredentials())('CRUD operations (e2e)', () => {
     expect(rows[0]!.age).toBeGreaterThanOrEqual(rows[1]!.age);
   });
 
-  it('selects with LIKE pattern', async () => {
+  it("selects with LIKE pattern", async () => {
     const db = getDb();
     const rows = await db.execute<{ name: string }>(
-      sql`SELECT name FROM ${sql.raw(tbl)} WHERE name LIKE ${'A%'}`,
+      sql`SELECT name FROM ${sql.raw(tbl)} WHERE name LIKE ${"A%"}`,
     );
     expect(rows.length).toBeGreaterThanOrEqual(1);
-    expect(rows.every((r) => r.name.startsWith('A'))).toBe(true);
+    expect(rows.every((r) => r.name.startsWith("A"))).toBe(true);
   });
 
-  it('returns a count', async () => {
+  it("returns a count", async () => {
     const db = getDb();
     const rows = await db.execute<{ cnt: number }>(
       sql`SELECT COUNT(*) AS cnt FROM ${sql.raw(tbl)}`,
@@ -108,18 +108,16 @@ describe.skipIf(!hasCredentials())('CRUD operations (e2e)', () => {
     expect(Number(rows[0]!.cnt)).toBeGreaterThanOrEqual(4);
   });
 
-  it('updates a row and reads back the change', async () => {
+  it("updates a row and reads back the change", async () => {
     const db = getDb();
-    await db.execute(
-      sql`UPDATE ${sql.raw(tbl)} SET name = ${'Alicia'} WHERE id = ${1}`,
-    );
+    await db.execute(sql`UPDATE ${sql.raw(tbl)} SET name = ${"Alicia"} WHERE id = ${1}`);
     const rows = await db.execute<{ name: string }>(
       sql`SELECT name FROM ${sql.raw(tbl)} WHERE id = ${1}`,
     );
-    expect(rows).toEqual([{ name: 'Alicia' }]);
+    expect(rows).toEqual([{ name: "Alicia" }]);
   });
 
-  it('deletes a row and verifies it is gone', async () => {
+  it("deletes a row and verifies it is gone", async () => {
     const db = getDb();
     await db.execute(sql`DELETE FROM ${sql.raw(tbl)} WHERE id = ${4}`);
     const rows = await db.execute<{ id: number }>(
@@ -128,15 +126,13 @@ describe.skipIf(!hasCredentials())('CRUD operations (e2e)', () => {
     expect(rows).toEqual([]);
   });
 
-  it('returns an empty array for an impossible WHERE', async () => {
+  it("returns an empty array for an impossible WHERE", async () => {
     const db = getDb();
-    const rows = await db.execute(
-      sql`SELECT * FROM ${sql.raw(tbl)} WHERE id = ${-99999}`,
-    );
+    const rows = await db.execute(sql`SELECT * FROM ${sql.raw(tbl)} WHERE id = ${-99999}`);
     expect(rows).toEqual([]);
   });
 
-  it('selects with multiple parameters combined via AND', async () => {
+  it("selects with multiple parameters combined via AND", async () => {
     const db = getDb();
     const rows = await db.execute<{ id: number; name: string; age: number }>(
       sql`SELECT id, name, age FROM ${sql.raw(tbl)} WHERE age > ${20} AND active = ${true} ORDER BY id`,
