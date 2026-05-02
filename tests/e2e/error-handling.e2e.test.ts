@@ -70,13 +70,11 @@ describe.skipIf(!hasCredentials())('Error handling (e2e)', () => {
     ).rejects.toBeInstanceOf(DatabricksUnsupportedError);
   });
 
-  it('returns NULL for division by zero rather than throwing', async () => {
+  it('throws on division by zero in ANSI mode', async () => {
     const db = getDb();
-    const rows = (await db.execute(
-      sql.raw('SELECT 1/0 AS result'),
-    )) as unknown as Array<{ result: unknown }>;
-    expect(rows).toHaveLength(1);
-    expect(rows[0]!.result).toBeNull();
+    await expect(
+      db.execute(sql.raw('SELECT 1/0 AS result')),
+    ).rejects.toThrow(/DIVIDE_BY_ZERO|Division by zero/);
   });
 
   it('throws on duplicate column name in CREATE TABLE', async () => {

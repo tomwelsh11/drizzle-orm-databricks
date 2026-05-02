@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { drizzle, type DatabricksDatabase } from '../../src/driver';
+import type { DatabricksConnectionConfig } from '../../src/types';
 
 const env = {
   host: process.env['DATABRICKS_HOST'],
@@ -21,17 +22,21 @@ export function uniqueName(base: string): string {
   return `drizzle_e2e_${base}_${suffix}`;
 }
 
+export function getConnectionConfig(): DatabricksConnectionConfig {
+  if (!hasCredentials()) {
+    throw new Error('Missing DATABRICKS_HOST / DATABRICKS_SQL_PATH and either DATABRICKS_TOKEN or DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET');
+  }
+  if (env.token) {
+    return { host: env.host!, path: env.path!, token: env.token, catalog: env.catalog, schema: env.schema };
+  }
+  return { host: env.host!, path: env.path!, clientId: env.clientId!, clientSecret: env.clientSecret!, catalog: env.catalog, schema: env.schema };
+}
+
 let cachedDb: DatabricksDatabase | undefined;
 
 export function getDb(): DatabricksDatabase {
   if (cachedDb) return cachedDb;
-  if (!hasCredentials()) {
-    throw new Error('Missing DATABRICKS_HOST / DATABRICKS_SQL_PATH and either DATABRICKS_TOKEN or DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET');
-  }
-  const base = { host: env.host!, path: env.path!, catalog: env.catalog, schema: env.schema };
-  cachedDb = env.token
-    ? drizzle({ ...base, token: env.token })
-    : drizzle({ ...base, clientId: env.clientId!, clientSecret: env.clientSecret! });
+  cachedDb = drizzle(getConnectionConfig());
   return cachedDb;
 }
 
