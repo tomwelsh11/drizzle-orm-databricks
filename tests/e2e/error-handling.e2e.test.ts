@@ -79,7 +79,9 @@ describe.skipIf(!hasCredentials())("Error handling (e2e)", () => {
 
   it("throws on division by zero in ANSI mode", async () => {
     const db = getDb();
-    await expect(db.execute(sql.raw("SELECT 1/0 AS result"))).rejects.toThrow(
+    const err = await db.execute(sql.raw("SELECT 1/0 AS result")).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(DrizzleQueryError);
+    expect((err as DrizzleQueryError).cause!.message).toMatch(
       /DIVIDE_BY_ZERO|Division by zero/,
     );
   });
