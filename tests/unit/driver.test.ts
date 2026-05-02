@@ -161,3 +161,35 @@ describe("DatabricksDatabase", () => {
     expect(mockClient.recorded[0]!.params).toEqual(["u1"]);
   });
 });
+
+describe("drizzle() with pool option", () => {
+  it("routes queries through the SessionPool when pool is provided", async () => {
+    const mockClient = new MockDBSQLClient();
+    mockClient.queueResponse([{ id: 1 }]);
+    mockClient.queueResponse([{ id: 2 }]);
+    const db = drizzle({ client: mockClient as never, pool: { max: 2 } });
+
+    await db.execute(sql`SELECT 1`);
+    await db.execute(sql`SELECT 2`);
+
+    expect(mockClient.recorded).toHaveLength(2);
+    expect(mockClient.openSessionCalls).toHaveLength(1);
+
+    await db.$close();
+    expect(mockClient.sessions[0]!.closed).toBe(true);
+    expect(mockClient.closed).toBe(false);
+  });
+
+  it("supports concurrent queries via the pool up to max size", async () => {
+    const mockClient = new MockDBSQLClient();
+    mockClient.queueResponse([{ x: 1 }]);
+    mockClient.queueResponse([{ x: 2 }]);
+    const db = drizzle({ client: mockClient as never, pool: { max: 2 } });
+
+    await Promise.all([db.execute(sql`SELECT 1`), db.execute(sql`SELECT 2`)]);
+
+    expect(mockClient.openSessionCalls).toHaveLength(2);
+
+    await db.$close();
+  });
+});

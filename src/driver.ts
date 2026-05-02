@@ -13,7 +13,8 @@ import {
   DatabricksSelectBuilder,
   DatabricksUpdateBuilder,
 } from "./query-builders";
-import { DatabricksSession, type DatabricksRawQueryResult } from "./session";
+import { DatabricksSession, type DatabricksRawQueryResult, type SessionExecutor } from "./session";
+import { SessionPool, type SessionPoolOptions } from "./session-pool";
 import type { DatabricksTable, NamespaceOverride } from "./table";
 import type {
   DatabricksClientConfig,
@@ -22,6 +23,10 @@ import type {
   DatabricksOAuthConnectionConfig,
   DatabricksTokenConnectionConfig,
 } from "./types";
+
+export interface DatabricksDriverOptions {
+  pool?: SessionPoolOptions;
+}
 
 export class DatabricksDatabase<TSchema extends Record<string, unknown> = Record<string, never>> {
   static readonly [entityKind]: string = "DatabricksDatabase";
@@ -164,22 +169,21 @@ export class DatabricksDatabase<TSchema extends Record<string, unknown> = Record
 }
 
 export function drizzle<TSchema extends Record<string, unknown> = Record<string, never>>(
-  config: DatabricksTokenConnectionConfig,
+  config: DatabricksTokenConnectionConfig & DatabricksDriverOptions,
   drizzleConfig?: DrizzleConfig<TSchema>,
 ): DatabricksDatabase<TSchema>;
 export function drizzle<TSchema extends Record<string, unknown> = Record<string, never>>(
-  config: DatabricksOAuthConnectionConfig,
+  config: DatabricksOAuthConnectionConfig & DatabricksDriverOptions,
   drizzleConfig?: DrizzleConfig<TSchema>,
 ): DatabricksDatabase<TSchema>;
 export function drizzle<TSchema extends Record<string, unknown> = Record<string, never>>(
-  config: DatabricksClientConfig,
+  config: DatabricksClientConfig & DatabricksDriverOptions,
   drizzleConfig?: DrizzleConfig<TSchema>,
 ): DatabricksDatabase<TSchema>;
 export function drizzle<TSchema extends Record<string, unknown> = Record<string, never>>(
-  config: DatabricksConfig,
+  config: DatabricksConfig & DatabricksDriverOptions,
   drizzleConfig: DrizzleConfig<TSchema> = {},
 ): DatabricksDatabase<TSchema> {
-  const sessionManager = new SessionManager(config);
   const dialect = new DatabricksDialect({ casing: drizzleConfig.casing });
 
   let logger;
@@ -189,9 +193,26 @@ export function drizzle<TSchema extends Record<string, unknown> = Record<string,
     logger = drizzleConfig.logger;
   }
 
-  const session = new DatabricksSession(sessionManager, dialect, { logger });
+  const { pool: poolOptions, ...connectionConfig } = config;
+  let executor: SessionExecutor;
+  let close: () => Promise<void>;
+
+  if (poolOptions) {
+    const pool = new SessionPool(connectionConfig as DatabricksConfig, {
+      ...poolOptions,
+      logger: poolOptions.logger ?? logger,
+    });
+    executor = pool;
+    close = () => pool.drain();
+  } else {
+    const sessionManager = new SessionManager(connectionConfig as DatabricksConfig);
+    executor = sessionManager;
+    close = () => sessionManager.close();
+  }
+
+  const session = new DatabricksSession(executor, dialect, { logger });
   const db = new DatabricksDatabase<TSchema>(dialect, session);
 
-  db.$close = () => sessionManager.close();
+  db.$close = close;
   return db;
 }
