@@ -1,12 +1,12 @@
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { closeDb, dropTable, getDb, hasCredentials, uniqueName } from './helpers';
+import { closeDb, dropTable, getDb, hasCredentials } from './helpers';
 
 const bt = (n: string) => '`' + n + '`';
 
 describe.skipIf(!hasCredentials())('SQL features & edge cases (e2e)', () => {
-  const tableName = uniqueName('feat');
+  const tableName = 'e2e_feat';
   const tbl = bt(tableName);
 
   beforeAll(async () => {

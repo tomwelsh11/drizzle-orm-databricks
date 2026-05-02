@@ -34,8 +34,14 @@ src/
 │   ├── binary.ts       # BINARY
 │   ├── variant.ts      # VARIANT (semi-structured JSON-like)
 │   └── index.ts        # re-exports
+├── query-builders/
+│   ├── select.ts       # DatabricksSelectBuilder, DatabricksSelectBase
+│   ├── insert.ts       # DatabricksInsertBuilder, DatabricksInsertBase
+│   ├── update.ts       # DatabricksUpdateBuilder, DatabricksUpdateBase
+│   ├── delete.ts       # DatabricksDeleteBase
+│   └── index.ts        # re-exports
 ├── table.ts            # DatabricksTable, databricksTable(), databricksSchema()
-├── dialect.ts          # DatabricksDialect (escapeName, escapeParam, sqlToQuery)
+├── dialect.ts          # DatabricksDialect (SQL building, escapeName, escapeParam)
 ├── session.ts          # DatabricksSession, DatabricksPreparedQuery
 ├── connection.ts       # SessionManager (lazy init, stale-session retry)
 ├── driver.ts           # DatabricksDatabase, drizzle() factory
@@ -69,10 +75,19 @@ Databricks does not support multi-statement transactions (Public Preview as of 2
 
 ### Query API
 
-The current release provides `db.execute()` with Drizzle's `sql` template tag for type-safe SQL execution. The template tag handles:
-- Column references → backtick-escaped identifiers
-- Table references → backtick-escaped with optional schema prefix
-- Parameters → `?` ordinal placeholders passed via `ordinalParameters`
-- SQL composition → arbitrary nesting of sql fragments
+The adapter provides two query APIs:
 
-Full query builders (`.select().from()`, `.insert().values()`, etc.) are planned for a future release.
+**Query builders** — `.select().from()`, `.insert().values()`, `.update().set()`, `.delete().where()` with full Drizzle operator support (`eq`, `and`, `or`, `gt`, `lt`, etc.) and type-safe results.
+
+**Raw SQL** — `db.execute()` with Drizzle's `sql` template tag for type-safe SQL execution. The template tag handles column references, table references, ordinal parameters, and arbitrary SQL composition.
+
+### Query builder architecture
+
+The query builders follow the same pattern as Drizzle's MySQL dialect (closest to Spark SQL):
+
+- `DatabricksDialect` builds SQL via `buildSelectQuery`, `buildInsertQuery`, `buildUpdateQuery`, `buildDeleteQuery`
+- Builder classes (`DatabricksSelectBuilder`, `DatabricksInsertBuilder`, etc.) compose configuration objects
+- Base classes (`DatabricksSelectBase`, `DatabricksInsertBase`, etc.) call the dialect to build SQL, then execute via `DatabricksSession.prepareQuery()`
+- Result mapping converts Databricks' object-keyed rows to typed results using column decoders
+
+Key adaptation: Databricks returns rows as `Record<string, unknown>` (objects), not positional arrays like MySQL. The select builder uses a custom result mapper that extracts values by column name and applies type decoders.

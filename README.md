@@ -32,21 +32,22 @@ const db = drizzle({
   token: process.env.DATABRICKS_TOKEN!,
 });
 
-// Type-safe queries using table and column references
-const rows = await db.execute<{ id: string; email: string }>(
-  sql`SELECT ${users.id}, ${users.email} FROM ${users} WHERE ${users.active} = ${true}`
-);
+// Query builders — type-safe select, insert, update, delete
+import { eq } from 'drizzle-orm';
 
-// Parameterised inserts — safe from SQL injection
-await db.execute(
-  sql`INSERT INTO ${users} (${users.id}, ${users.email}, ${users.loginCount}, ${users.active}, ${users.createdAt})
-      VALUES (${crypto.randomUUID()}, ${'a@b.com'}, ${0}, ${true}, ${new Date().toISOString()})`
-);
+const rows = await db.select().from(users).where(eq(users.active, true));
 
-// Updates and deletes use the same column references
-await db.execute(
-  sql`UPDATE ${users} SET ${users.active} = ${false} WHERE ${users.id} = ${'u1'}`
-);
+await db.insert(users).values({
+  id: crypto.randomUUID(),
+  email: 'a@b.com',
+  loginCount: BigInt(0),
+  active: true,
+  createdAt: new Date(),
+});
+
+await db.update(users).set({ active: false }).where(eq(users.id, 'u1'));
+
+await db.delete(users).where(eq(users.id, 'u1'));
 
 await db.$close();
 ```
@@ -152,6 +153,53 @@ const events = analytics.table('events', {
 });
 ```
 
+## Query builders
+
+Full Drizzle query builder support with type-safe select, insert, update, and delete:
+
+```ts
+import { eq, and, gt, desc, sql } from 'drizzle-orm';
+
+// Select with where, order, limit, offset
+const activeUsers = await db
+  .select()
+  .from(users)
+  .where(eq(users.active, true))
+  .orderBy(desc(users.createdAt))
+  .limit(10);
+
+// Partial select — only the columns you need
+const names = await db
+  .select({ id: users.id, email: users.email })
+  .from(users)
+  .where(gt(users.loginCount, BigInt(10)));
+
+// Insert single or multiple rows
+await db.insert(users).values({ id: 'u1', email: 'a@b.com', loginCount: BigInt(0), active: true, createdAt: new Date() });
+await db.insert(users).values([
+  { id: 'u2', email: 'b@c.com', loginCount: BigInt(0), active: true, createdAt: new Date() },
+  { id: 'u3', email: 'c@d.com', loginCount: BigInt(0), active: false, createdAt: new Date() },
+]);
+
+// Update with where
+await db.update(users).set({ active: false }).where(eq(users.id, 'u1'));
+
+// Delete with where
+await db.delete(users).where(eq(users.id, 'u1'));
+
+// Joins
+const result = await db
+  .select({ userName: users.email, eventName: events.name })
+  .from(users)
+  .innerJoin(events, eq(users.id, events.id));
+
+// Select distinct
+const uniqueNames = await db.selectDistinct({ email: users.email }).from(users);
+
+// You can still use db.execute() with the sql template tag for raw queries
+const raw = await db.execute(sql`SELECT COUNT(*) as cnt FROM ${users}`);
+```
+
 ## Migrations
 
 ```ts
@@ -183,8 +231,8 @@ Note: `DATABRICKS_HOST` is the hostname only — no `https://` prefix.
 
 ## Limitations
 
-- **No query builders yet.** This release provides `db.execute()` with Drizzle's `sql` template tag for type-safe table/column references and parameterised queries. Full query builder support (`.select().from()`, `.insert().values()`) is planned for the next release.
 - **No `RETURNING` clause.** Databricks does not support RETURNING on INSERT/UPDATE/DELETE. Generate primary keys client-side (UUIDs) and SELECT after insert.
+- **No relational queries yet.** The `db.query` API with `with` relations is not yet supported. Use query builders or `db.execute()` with joins.
 - **No multi-statement transactions.** `db.session.transaction()` throws `DatabricksUnsupportedError`. Databricks provides single-statement atomicity only.
 - **No drizzle-kit support.** drizzle-kit does not understand Spark SQL. Write DDL manually.
 - **Foreign keys are informational only.** Databricks accepts FK syntax but does not enforce referential integrity.
@@ -194,7 +242,7 @@ Note: `DATABRICKS_HOST` is the hostname only — no `https://` prefix.
 ## Testing
 
 ```bash
-pnpm test          # 101 unit tests (mocked @databricks/sql)
+pnpm test          # 126 unit tests (mocked @databricks/sql)
 pnpm test:e2e      # E2E against a real Databricks SQL warehouse
 pnpm test:types    # tsc --noEmit
 pnpm test:coverage # v8 coverage report

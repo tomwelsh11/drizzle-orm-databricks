@@ -16,12 +16,6 @@ export function hasCredentials(): boolean {
   return !!(env.host && env.path && (env.token || (env.clientId && env.clientSecret)));
 }
 
-const suffix = Math.random().toString(36).slice(2, 8);
-
-export function uniqueName(base: string): string {
-  return `drizzle_e2e_${base}_${suffix}`;
-}
-
 export function getConnectionConfig(): DatabricksConnectionConfig {
   if (!hasCredentials()) {
     throw new Error('Missing DATABRICKS_HOST / DATABRICKS_SQL_PATH and either DATABRICKS_TOKEN or DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET');

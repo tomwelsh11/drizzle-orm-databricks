@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import type { DatabricksDatabase } from '../../src/driver';
-import { closeDb, dropTable, getDb, hasCredentials, uniqueName } from './helpers';
+import { closeDb, dropTable, getDb, hasCredentials } from './helpers';
 
 const createdTables: string[] = [];
 
@@ -25,7 +25,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('STRING round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_string');
+    const t = ('col_string');
     await createTable(db, t, 'id INT, val STRING');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, 'hello world')`));
     const rows = await db.execute<{ id: number; val: string }>(sql.raw(`SELECT * FROM \`${t}\``));
@@ -34,7 +34,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('VARCHAR(255) round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_varchar');
+    const t = ('col_varchar');
     const value = 'a'.repeat(255);
     await createTable(db, t, 'id INT, val VARCHAR(255)');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, '${value}')`));
@@ -45,7 +45,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('CHAR(10) round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_char');
+    const t = ('col_char');
     await createTable(db, t, 'id INT, val CHAR(10)');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, 'abc')`));
     const rows = await db.execute<{ id: number; val: string }>(sql.raw(`SELECT * FROM \`${t}\``));
@@ -54,7 +54,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('INT round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_int');
+    const t = ('col_int');
     await createTable(db, t, 'id INT, val INT');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, 42)`));
     const rows = await db.execute<{ id: number; val: number }>(sql.raw(`SELECT * FROM \`${t}\``));
@@ -64,7 +64,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('BIGINT round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_bigint');
+    const t = ('col_bigint');
     await createTable(db, t, 'id INT, val BIGINT');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, 9007199254740000)`));
     const rows = await db.execute<{ id: number; val: number | string | bigint }>(
@@ -77,7 +77,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('SMALLINT round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_smallint');
+    const t = ('col_smallint');
     await createTable(db, t, 'id INT, val SMALLINT');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, 32000)`));
     const rows = await db.execute<{ id: number; val: number }>(sql.raw(`SELECT * FROM \`${t}\``));
@@ -87,7 +87,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('TINYINT round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_tinyint');
+    const t = ('col_tinyint');
     await createTable(db, t, 'id INT, val TINYINT');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, 127)`));
     const rows = await db.execute<{ id: number; val: number }>(sql.raw(`SELECT * FROM \`${t}\``));
@@ -97,7 +97,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('FLOAT round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_float');
+    const t = ('col_float');
     await createTable(db, t, 'id INT, val FLOAT');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, 3.14)`));
     const rows = await db.execute<{ id: number; val: number }>(sql.raw(`SELECT * FROM \`${t}\``));
@@ -106,7 +106,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('DOUBLE round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_double');
+    const t = ('col_double');
     await createTable(db, t, 'id INT, val DOUBLE');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, 3.141592653589793)`));
     const rows = await db.execute<{ id: number; val: number }>(sql.raw(`SELECT * FROM \`${t}\``));
@@ -115,7 +115,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('DECIMAL(18, 6) round-trip preserves precision', async () => {
     const db = getDb();
-    const t = uniqueName('col_decimal');
+    const t = ('col_decimal');
     await createTable(db, t, 'id INT, val DECIMAL(18, 6)');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, 123456.789012)`));
     const rows = await db.execute<{ id: number; val: string | number }>(
@@ -126,7 +126,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('BOOLEAN round-trip (true and false)', async () => {
     const db = getDb();
-    const t = uniqueName('col_boolean');
+    const t = ('col_boolean');
     await createTable(db, t, 'id INT, val BOOLEAN');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, true), (2, false)`));
     const rows = await db.execute<{ id: number; val: boolean }>(
@@ -139,7 +139,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('DATE round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_date');
+    const t = ('col_date');
     await createTable(db, t, 'id INT, val DATE');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, DATE'2024-06-15')`));
     const rows = await db.execute<{ id: number; val: string | Date }>(
@@ -153,7 +153,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('TIMESTAMP round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_timestamp');
+    const t = ('col_timestamp');
     await createTable(db, t, 'id INT, val TIMESTAMP');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, TIMESTAMP'2024-06-15 10:30:00')`));
     const rows = await db.execute<{ id: number; val: string | Date }>(
@@ -168,7 +168,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('TIMESTAMP_NTZ round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_timestamp_ntz');
+    const t = ('col_timestamp_ntz');
     await createTable(db, t, 'id INT, val TIMESTAMP_NTZ');
     await db.execute(
       sql.raw(`INSERT INTO \`${t}\` VALUES (1, TIMESTAMP_NTZ'2024-06-15 10:30:00')`),
@@ -185,7 +185,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('BINARY round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_binary');
+    const t = ('col_binary');
     await createTable(db, t, "id INT, val BINARY");
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, X'DEADBEEF')`));
     const rows = await db.execute<{ id: number; val: Uint8Array | Buffer | string }>(
@@ -204,7 +204,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('VARIANT round-trip', async () => {
     const db = getDb();
-    const t = uniqueName('col_variant');
+    const t = ('col_variant');
     await createTable(db, t, 'id INT, val VARIANT');
     await db.execute(
       sql.raw(`INSERT INTO \`${t}\` VALUES (1, PARSE_JSON('{"key": "value", "num": 42}'))`),
@@ -220,7 +220,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('combined table with multiple column types', async () => {
     const db = getDb();
-    const t = uniqueName('col_combined');
+    const t = ('col_combined');
     await createTable(
       db,
       t,
@@ -263,7 +263,7 @@ describe.skipIf(!hasCredentials())('Column type round-trips', () => {
 
   it('NULL value round-trip on a nullable column', async () => {
     const db = getDb();
-    const t = uniqueName('col_null');
+    const t = ('col_null');
     await createTable(db, t, 'id INT, val STRING');
     await db.execute(sql.raw(`INSERT INTO \`${t}\` VALUES (1, NULL)`));
     const rows = await db.execute<{ id: number; val: string | null }>(

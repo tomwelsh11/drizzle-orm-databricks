@@ -17,4 +17,20 @@ export {
   DatabricksTable,
 } from './table';
 
+export {
+  DatabricksSelectBuilder,
+  DatabricksSelectBase,
+  DatabricksInsertBuilder,
+  DatabricksInsertBase,
+  DatabricksUpdateBuilder,
+  DatabricksUpdateBase,
+  DatabricksDeleteBase,
+  union,
+  unionAll,
+  intersect,
+  intersectAll,
+  except,
+  exceptAll,
+} from './query-builders';
+
 export * from './columns';

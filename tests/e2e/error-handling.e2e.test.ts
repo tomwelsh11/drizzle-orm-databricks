@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { DatabricksUnsupportedError } from '../../src/errors';
-import { closeDb, dropTable, getDb, hasCredentials, uniqueName } from './helpers';
+import { closeDb, dropTable, getDb, hasCredentials } from './helpers';
 
 describe.skipIf(!hasCredentials())('Error handling (e2e)', () => {
   const createdTables: string[] = [];
@@ -26,7 +26,7 @@ describe.skipIf(!hasCredentials())('Error handling (e2e)', () => {
 
   it('throws when querying a non-existent table', async () => {
     const db = getDb();
-    const missing = uniqueName('does_not_exist');
+    const missing = 'e2e_does_not_exist';
     await expect(
       db.execute(sql.raw(`SELECT * FROM \`${missing}\``)),
     ).rejects.toThrow();
@@ -34,7 +34,7 @@ describe.skipIf(!hasCredentials())('Error handling (e2e)', () => {
 
   it('errors or coerces when inserting wrong-typed parameter', async () => {
     const db = getDb();
-    const tableName = uniqueName('typecheck');
+    const tableName = 'e2e_typecheck';
     createdTables.push(tableName);
 
     await db.execute(
@@ -79,7 +79,7 @@ describe.skipIf(!hasCredentials())('Error handling (e2e)', () => {
 
   it('throws on duplicate column name in CREATE TABLE', async () => {
     const db = getDb();
-    const tableName = uniqueName('dupcol');
+    const tableName = 'e2e_dupcol';
     createdTables.push(tableName);
     await expect(
       db.execute(
