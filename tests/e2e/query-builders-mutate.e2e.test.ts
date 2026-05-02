@@ -2,11 +2,11 @@ import { and, eq, gt, isNull, or, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { boolean, databricksTable, double, int, string } from '../../src';
-import { closeDb, dropTable, getDb, hasCredentials, uniqueName } from './helpers';
+import { closeDb, dropTable, getDb, hasCredentials } from './helpers';
 
 const bt = (n: string) => '`' + n + '`';
 
-const tableName = uniqueName('qb_mutate');
+const tableName = 'qb_mutate';
 const tbl = bt(tableName);
 
 const items = databricksTable(tableName, {
@@ -293,7 +293,7 @@ describe.skipIf(!hasCredentials())('Query builder INSERT/UPDATE/DELETE (e2e)', (
       // Then test a no-WHERE update on a tiny set by deleting other rows first
       // would be destructive. Instead, validate the no-WHERE form against
       // a freshly-created scratch table.
-      const scratchName = uniqueName('qb_update_all');
+      const scratchName = 'qb_update_all';
       const scratch = bt(scratchName);
       const scratchTable = databricksTable(scratchName, {
         id: string('id'),
@@ -416,7 +416,7 @@ describe.skipIf(!hasCredentials())('Query builder INSERT/UPDATE/DELETE (e2e)', (
 
     it('deletes all rows when WHERE is omitted', async () => {
       const db = getDb();
-      const scratchName = uniqueName('qb_delete_all');
+      const scratchName = 'qb_delete_all';
       const scratch = bt(scratchName);
       const scratchTable = databricksTable(scratchName, {
         id: string('id'),

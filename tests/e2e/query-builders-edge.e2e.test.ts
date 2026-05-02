@@ -20,9 +20,9 @@ import {
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { boolean, databricksTable, double, int, string } from '../../src';
-import { closeDb, dropTable, getDb, hasCredentials, uniqueName } from './helpers';
+import { closeDb, dropTable, getDb, hasCredentials } from './helpers';
 
-const tableName = uniqueName('qb_edge');
+const tableName = 'qb_edge';
 
 const items = databricksTable(tableName, {
   id: string('id'),
@@ -170,7 +170,7 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
   // 8. Large result sets — insert 100, select all
   it('handles large result sets (100 rows)', async () => {
     const db = getDb();
-    const bulkTable = uniqueName('qb_edge_bulk');
+    const bulkTable = 'qb_edge_bulk';
     await dropTable(db, bulkTable);
     await db.execute(
       sql.raw(
@@ -215,7 +215,7 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
   // 11. Special characters in string values — quotes, backticks, newlines, unicode emoji
   it('round-trips special characters in string values', async () => {
     const db = getDb();
-    const specialTable = uniqueName('qb_edge_special');
+    const specialTable = 'qb_edge_special';
     await dropTable(db, specialTable);
     await db.execute(
       sql.raw(`CREATE TABLE IF NOT EXISTS ${bt(specialTable)} (id STRING, name STRING) USING DELTA`),
@@ -386,7 +386,7 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
   // 19. Double / float precision round-trip
   it('round-trips double precision values', async () => {
     const db = getDb();
-    const precTable = uniqueName('qb_edge_prec');
+    const precTable = 'qb_edge_prec';
     await dropTable(db, precTable);
     await db.execute(
       sql.raw(`CREATE TABLE IF NOT EXISTS ${bt(precTable)} (id STRING, score DOUBLE) USING DELTA`),

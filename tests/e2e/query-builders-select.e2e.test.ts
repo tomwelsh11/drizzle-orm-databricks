@@ -25,9 +25,9 @@ import {
   int,
   string,
 } from '../../src';
-import { closeDb, dropTable, getDb, hasCredentials, uniqueName } from './helpers';
+import { closeDb, dropTable, getDb, hasCredentials } from './helpers';
 
-const usersName = uniqueName('qb_select_users');
+const usersName = 'qb_select_users';
 
 const users = databricksTable(usersName, {
   id: string('id'),

@@ -6,7 +6,7 @@ import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { migrate } from '../../src/migrator';
-import { closeDb, dropTable, getDb, hasCredentials, uniqueName } from './helpers';
+import { closeDb, dropTable, getDb, hasCredentials } from './helpers';
 
 type JournalEntry = {
   idx: number;
@@ -79,7 +79,7 @@ describe.skipIf(!hasCredentials())('Migrator (e2e)', () => {
 
   it('creates the migration tracking table when there are no migrations', async () => {
     const db = getDb();
-    const migrationsTable = uniqueName('mig_track');
+    const migrationsTable = 'mig_track';
     createdMigrationsTables.push(migrationsTable);
 
     const dir = makeMigrationsDir([]);
@@ -95,8 +95,8 @@ describe.skipIf(!hasCredentials())('Migrator (e2e)', () => {
 
   it('applies a migration from disk', async () => {
     const db = getDb();
-    const migrationsTable = uniqueName('mig_apply');
-    const tableName = uniqueName('migrated');
+    const migrationsTable = 'mig_apply';
+    const tableName = 'migrated';
     createdMigrationsTables.push(migrationsTable);
     createdTables.push(tableName);
 
@@ -125,8 +125,8 @@ describe.skipIf(!hasCredentials())('Migrator (e2e)', () => {
 
   it('is idempotent across repeated runs', async () => {
     const db = getDb();
-    const migrationsTable = uniqueName('mig_idem');
-    const tableName = uniqueName('idem');
+    const migrationsTable = 'mig_idem';
+    const tableName = 'idem';
     createdMigrationsTables.push(migrationsTable);
     createdTables.push(tableName);
 
@@ -150,9 +150,9 @@ describe.skipIf(!hasCredentials())('Migrator (e2e)', () => {
 
   it('applies multiple migrations in order', async () => {
     const db = getDb();
-    const migrationsTable = uniqueName('mig_multi');
-    const tableA = uniqueName('multi_a');
-    const tableB = uniqueName('multi_b');
+    const migrationsTable = 'mig_multi';
+    const tableA = 'multi_a';
+    const tableB = 'multi_b';
     createdMigrationsTables.push(migrationsTable);
     createdTables.push(tableA, tableB);
 

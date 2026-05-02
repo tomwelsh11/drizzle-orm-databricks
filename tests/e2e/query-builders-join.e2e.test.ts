@@ -2,18 +2,15 @@ import { sql, eq, and, gt, lt, desc, asc } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { databricksTable, string, int } from '../../src';
-import { closeDb, dropTable, getDb, hasCredentials, uniqueName } from './helpers';
+import { closeDb, dropTable, getDb, hasCredentials } from './helpers';
 
-const usersName = uniqueName('qb_join_users');
-const postsName = uniqueName('qb_join_posts');
-
-const users = databricksTable(usersName, {
+const users = databricksTable('qb_join_users', {
   id: string('id'),
   name: string('name'),
   age: int('age'),
 });
 
-const posts = databricksTable(postsName, {
+const posts = databricksTable('qb_join_posts', {
   id: string('id'),
   userId: string('user_id'),
   title: string('title'),
@@ -25,33 +22,32 @@ const bt = (n: string) => '`' + n + '`';
 describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
   beforeAll(async () => {
     const db = getDb();
-    await dropTable(db, usersName);
-    await dropTable(db, postsName);
+    await dropTable(db, 'qb_join_users');
+    await dropTable(db, 'qb_join_posts');
 
     await db.execute(sql.raw(
-      `CREATE TABLE IF NOT EXISTS ${bt(usersName)} (
+      `CREATE TABLE IF NOT EXISTS ${bt('qb_join_users')} (
         id STRING, name STRING, age INT
       ) USING DELTA`,
     ));
     await db.execute(sql.raw(
-      `CREATE TABLE IF NOT EXISTS ${bt(postsName)} (
+      `CREATE TABLE IF NOT EXISTS ${bt('qb_join_posts')} (
         id STRING, user_id STRING, title STRING, likes INT
       ) USING DELTA`,
     ));
 
-    // 4 users — u1 (Alice), u2 (Bob), u3 (Carol), u4 (Dan)
-    // u4 has no posts
+    // 4 users — u4 has no posts
     await db.execute(sql.raw(
-      `INSERT INTO ${bt(usersName)} (id, name, age) VALUES
+      `INSERT INTO ${bt('qb_join_users')} (id, name, age) VALUES
         ('u1', 'Alice', 30),
         ('u2', 'Bob', 25),
         ('u3', 'Carol', 40),
         ('u4', 'Dan', 22)`,
     ));
 
-    // 5 posts: u1 has 2, u2 has 1, u3 has 1, plus one orphan with user_id 'u_ghost' (no matching user)
+    // 5 posts: u1 has 2, u2 has 1, u3 has 1, plus one orphan with user_id 'u_ghost'
     await db.execute(sql.raw(
-      `INSERT INTO ${bt(postsName)} (id, user_id, title, likes) VALUES
+      `INSERT INTO ${bt('qb_join_posts')} (id, user_id, title, likes) VALUES
         ('p1', 'u1', 'Hello World', 50),
         ('p2', 'u1', 'Second Post', 5),
         ('p3', 'u2', 'Bobs Thoughts', 20),
@@ -63,8 +59,8 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
   afterAll(async () => {
     const db = getDb();
     try {
-      await dropTable(db, usersName);
-      await dropTable(db, postsName);
+      await dropTable(db, 'qb_join_users');
+      await dropTable(db, 'qb_join_posts');
     } finally {
       await closeDb();
     }
@@ -79,10 +75,9 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // 4 matching: u1×p1, u1×p2, u2×p3, u3×p4 (u4 and p5 excluded)
     expect(rows).toHaveLength(4);
     for (const row of rows) {
-      const r = row as Record<string, any>;
-      expect(r[usersName]).not.toBeNull();
-      expect(r[postsName]).not.toBeNull();
-      expect(r[usersName].id).toBe(r[postsName].userId);
+      expect(row.qb_join_users).not.toBeNull();
+      expect(row.qb_join_posts).not.toBeNull();
+      expect(row.qb_join_users.id).toBe(row.qb_join_posts.userId);
     }
   });
 
@@ -100,8 +95,8 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
       expect(typeof row.userName).toBe('string');
       expect(typeof row.postTitle).toBe('string');
       // No nested table grouping in partial select
-      expect((row as Record<string, unknown>).users).toBeUndefined();
-      expect((row as Record<string, unknown>).posts).toBeUndefined();
+      expect((row as Record<string, unknown>).qb_join_users).toBeUndefined();
+      expect((row as Record<string, unknown>).qb_join_posts).toBeUndefined();
     }
   });
 
@@ -114,14 +109,14 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // u1 (×2), u2, u3, u4 (with null) = 5 rows
     expect(rows).toHaveLength(5);
 
-    const danRows = rows.filter((r) => (r as Record<string, any>)[usersName].id === 'u4');
+    const danRows = rows.filter((r) => r.qb_join_users.id === 'u4');
     expect(danRows).toHaveLength(1);
-    expect((danRows[0] as Record<string, any>)[postsName]).toBeNull();
+    expect(danRows[0]!.qb_join_posts).toBeNull();
 
-    const aliceRows = rows.filter((r) => (r as Record<string, any>)[usersName].id === 'u1');
+    const aliceRows = rows.filter((r) => r.qb_join_users.id === 'u1');
     expect(aliceRows).toHaveLength(2);
     for (const row of aliceRows) {
-      expect((row as Record<string, any>)[postsName]).not.toBeNull();
+      expect(row.qb_join_posts).not.toBeNull();
     }
   });
 
@@ -131,7 +126,7 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
       .from(users)
       .leftJoin(posts, eq(users.id, posts.userId));
 
-    const distinctUserIds = new Set(rows.map((r) => (r as Record<string, any>)[usersName].id));
+    const distinctUserIds = new Set(rows.map((r) => r.qb_join_users.id));
     expect(distinctUserIds.size).toBe(4);
     expect(distinctUserIds).toEqual(new Set(['u1', 'u2', 'u3', 'u4']));
   });
@@ -145,11 +140,11 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // All 5 posts appear; the orphan p5 has null users
     expect(rows).toHaveLength(5);
 
-    const orphan = rows.find((r) => (r as Record<string, any>)[postsName]?.id === 'p5');
+    const orphan = rows.find((r) => r.qb_join_posts?.id === 'p5');
     expect(orphan).toBeDefined();
-    expect((orphan as Record<string, any>)[usersName]).toBeNull();
+    expect(orphan!.qb_join_users).toBeNull();
 
-    const matched = rows.filter((r) => (r as Record<string, any>)[usersName] !== null);
+    const matched = rows.filter((r) => r.qb_join_users !== null);
     expect(matched).toHaveLength(4);
   });
 
@@ -162,13 +157,13 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // 4 matched + u4 (no posts) + p5 (no user) = 6 rows
     expect(rows).toHaveLength(6);
 
-    const userOnly = rows.find((r) => (r as Record<string, any>)[usersName]?.id === 'u4');
+    const userOnly = rows.find((r) => r.qb_join_users?.id === 'u4');
     expect(userOnly).toBeDefined();
-    expect((userOnly as Record<string, any>)[postsName]).toBeNull();
+    expect(userOnly!.qb_join_posts).toBeNull();
 
-    const postOnly = rows.find((r) => (r as Record<string, any>)[postsName]?.id === 'p5');
+    const postOnly = rows.find((r) => r.qb_join_posts?.id === 'p5');
     expect(postOnly).toBeDefined();
-    expect((postOnly as Record<string, any>)[usersName]).toBeNull();
+    expect(postOnly!.qb_join_users).toBeNull();
   });
 
   it('JOIN with WHERE on left table filters left-side rows', async () => {
@@ -181,7 +176,7 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // Only Alice (30) and Carol (40) qualify; Alice has 2 posts, Carol has 1 = 3 rows
     expect(rows).toHaveLength(3);
     for (const row of rows) {
-      expect((row as Record<string, any>)[usersName].age).toBeGreaterThan(28);
+      expect(row.qb_join_users.age).toBeGreaterThan(28);
     }
   });
 
@@ -195,7 +190,7 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // p1 (50), p3 (20), p4 (100) — 3 posts above threshold and matching a user
     expect(rows).toHaveLength(3);
     for (const row of rows) {
-      expect((row as Record<string, any>)[postsName].likes).toBeGreaterThan(10);
+      expect(row.qb_join_posts.likes).toBeGreaterThan(10);
     }
   });
 
@@ -209,8 +204,8 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // age > 24 → u1, u2, u3; combined with likes > 10 → p1, p3, p4
     expect(rows).toHaveLength(3);
     for (const row of rows) {
-      expect((row as Record<string, any>)[usersName].age).toBeGreaterThan(24);
-      expect((row as Record<string, any>)[postsName].likes).toBeGreaterThan(10);
+      expect(row.qb_join_users.age).toBeGreaterThan(24);
+      expect(row.qb_join_posts.likes).toBeGreaterThan(10);
     }
   });
 
@@ -277,7 +272,7 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
 
     // Dan has no posts; LEFT JOIN keeps him with null posts
     expect(rows).toHaveLength(1);
-    expect((rows[0] as Record<string, any>)[usersName].id).toBe('u4');
-    expect((rows[0] as Record<string, any>)[postsName]).toBeNull();
+    expect(rows[0]!.qb_join_users.id).toBe('u4');
+    expect(rows[0]!.qb_join_posts).toBeNull();
   });
 });

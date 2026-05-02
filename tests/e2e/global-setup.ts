@@ -25,11 +25,12 @@ export async function setup(): Promise<void> {
 
   const db = drizzle(config);
   try {
-    if (catalog) {
-      await db.execute(sql`CREATE SCHEMA IF NOT EXISTS ${sql.identifier(catalog)}.${sql.identifier(schema)}`);
-    } else {
-      await db.execute(sql`CREATE SCHEMA IF NOT EXISTS ${sql.identifier(schema)}`);
-    }
+    const qualifiedSchema = catalog
+      ? sql`${sql.identifier(catalog)}.${sql.identifier(schema)}`
+      : sql`${sql.identifier(schema)}`;
+
+    await db.execute(sql`DROP SCHEMA IF EXISTS ${qualifiedSchema} CASCADE`);
+    await db.execute(sql`CREATE SCHEMA ${qualifiedSchema}`);
   } finally {
     await db.$close();
   }

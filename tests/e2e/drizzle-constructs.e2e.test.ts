@@ -14,10 +14,10 @@ import {
   timestampNtz,
   variant,
 } from '../../src';
-import { closeDb, dropTable, getDb, hasCredentials, uniqueName } from './helpers';
+import { closeDb, dropTable, getDb, hasCredentials } from './helpers';
 
-const usersName = uniqueName('dz_users');
-const eventsName = uniqueName('dz_events');
+const usersName = 'dz_users';
+const eventsName = 'dz_events';
 
 const users = databricksTable(usersName, {
   id: string('id'),
