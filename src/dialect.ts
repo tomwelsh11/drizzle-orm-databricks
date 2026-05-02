@@ -108,7 +108,11 @@ export class DatabricksDialect {
         if (isSingleTable) {
           chunk.push(sql.identifier(this.casing.getColumnCasing(field)));
         } else {
-          chunk.push(field as unknown as SQL);
+          const colRef = field as unknown as SQL;
+          const tableName = getTableName(field.table);
+          const colName = field.name;
+          const alias = `${tableName}__${colName}`;
+          chunk.push(sql`${colRef} as ${sql.identifier(alias)}`);
         }
       }
 

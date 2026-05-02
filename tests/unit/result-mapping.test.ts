@@ -126,12 +126,13 @@ describe('JOIN result mapping', () => {
     const mockClient = new MockDBSQLClient();
     mockClient.queueResponse([
       {
-        id: 1,
-        name: 'Alice',
-        age: 30,
-        active: true,
-        user_id: 'u1',
-        title: 'Post1',
+        users__id: 1,
+        users__name: 'Alice',
+        users__age: 30,
+        users__active: true,
+        posts__id: 1,
+        posts__user_id: 'u1',
+        posts__title: 'Post1',
       },
     ]);
     const db = drizzle({ client: mockClient as never });
@@ -156,12 +157,12 @@ describe('JOIN result mapping', () => {
     const mockClient = new MockDBSQLClient();
     mockClient.queueResponse([
       {
-        id: 'u1',
-        name: 'Alice',
-        age: 30,
-        active: true,
-        user_id: null,
-        bio: null,
+        users__id: 'u1',
+        users__name: 'Alice',
+        users__age: 30,
+        users__active: true,
+        profiles__user_id: null,
+        profiles__bio: null,
       },
     ]);
     const db = drizzle({ client: mockClient as never });
@@ -180,7 +181,7 @@ describe('JOIN result mapping', () => {
 
   it('maps a partial select with join to a flat shape', async () => {
     const mockClient = new MockDBSQLClient();
-    mockClient.queueResponse([{ name: 'Alice', title: 'Hello' }]);
+    mockClient.queueResponse([{ users__name: 'Alice', posts__title: 'Hello' }]);
     const db = drizzle({ client: mockClient as never });
 
     const rows = await db

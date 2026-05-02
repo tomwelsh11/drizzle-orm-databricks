@@ -5,7 +5,7 @@ import { QueryPromise } from 'drizzle-orm/query-promise';
 import { SelectionProxyHandler } from 'drizzle-orm/selection-proxy';
 import { SQL, View } from 'drizzle-orm/sql';
 import { Subquery } from 'drizzle-orm/subquery';
-import { Table } from 'drizzle-orm/table';
+import { getTableName, Table } from 'drizzle-orm/table';
 import { getTableColumns, haveSameKeys } from 'drizzle-orm/utils';
 import { ViewBaseConfig } from 'drizzle-orm/view-common';
 
@@ -424,9 +424,12 @@ function mapObjectResultRow(
 
     if (is(field, Column)) {
       decoder = field;
-      key = isSingleTable
-        ? dialect.casing.getColumnCasing(field)
-        : field.name;
+      if (isSingleTable) {
+        key = dialect.casing.getColumnCasing(field);
+      } else {
+        const tableName = getTableName(field.table);
+        key = `${tableName}__${field.name}`;
+      }
     } else if (is(field, SQL.Aliased)) {
       decoder = (field as any).sql?.decoder ?? { mapFromDriverValue: (v: unknown) => v };
       key = field.fieldAlias;
