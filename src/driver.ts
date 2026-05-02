@@ -5,8 +5,21 @@ import type { SQL, SQLWrapper } from 'drizzle-orm/sql';
 
 import { SessionManager } from './connection';
 import { DatabricksDialect } from './dialect';
+import {
+  DatabricksDeleteBase,
+  DatabricksInsertBuilder,
+  DatabricksSelectBuilder,
+  DatabricksUpdateBuilder,
+} from './query-builders';
 import { DatabricksSession, type DatabricksRawQueryResult } from './session';
-import type { DatabricksClientConfig, DatabricksConfig, DatabricksConnectionConfig, DatabricksOAuthConnectionConfig, DatabricksTokenConnectionConfig } from './types';
+import type { DatabricksTable } from './table';
+import type {
+  DatabricksClientConfig,
+  DatabricksConfig,
+  DatabricksConnectionConfig,
+  DatabricksOAuthConnectionConfig,
+  DatabricksTokenConnectionConfig,
+} from './types';
 
 export class DatabricksDatabase<
   TSchema extends Record<string, unknown> = Record<string, never>,
@@ -19,6 +32,43 @@ export class DatabricksDatabase<
     /** @internal */
     readonly session: DatabricksSession,
   ) {}
+
+  select(): DatabricksSelectBuilder<undefined>;
+  select<TSelection extends Record<string, unknown>>(
+    fields: TSelection,
+  ): DatabricksSelectBuilder<TSelection>;
+  select(fields?: Record<string, unknown>) {
+    return new DatabricksSelectBuilder({
+      fields: fields ?? undefined,
+      session: this.session,
+      dialect: this.dialect,
+    });
+  }
+
+  selectDistinct(): DatabricksSelectBuilder<undefined>;
+  selectDistinct<TSelection extends Record<string, unknown>>(
+    fields: TSelection,
+  ): DatabricksSelectBuilder<TSelection>;
+  selectDistinct(fields?: Record<string, unknown>) {
+    return new DatabricksSelectBuilder({
+      fields: fields ?? undefined,
+      session: this.session,
+      dialect: this.dialect,
+      distinct: true,
+    });
+  }
+
+  insert<TTable extends DatabricksTable<any>>(table: TTable): DatabricksInsertBuilder<TTable> {
+    return new DatabricksInsertBuilder(table, this.session, this.dialect);
+  }
+
+  update<TTable extends DatabricksTable<any>>(table: TTable): DatabricksUpdateBuilder<TTable> {
+    return new DatabricksUpdateBuilder(table, this.session, this.dialect);
+  }
+
+  delete<TTable extends DatabricksTable<any>>(table: TTable): DatabricksDeleteBase<TTable> {
+    return new DatabricksDeleteBase(table, this.session, this.dialect);
+  }
 
   async execute<T extends Record<string, unknown> = Record<string, unknown>>(
     query: SQLWrapper,
