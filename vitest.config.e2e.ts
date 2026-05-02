@@ -7,8 +7,8 @@ export default defineConfig({
     globals: false,
     testTimeout: 120_000,
     hookTimeout: 120_000,
-    fileParallelism: false,
-    sequence: { concurrent: false },
+    fileParallelism: true,
+    sequence: { concurrent: true },
     globalSetup: ["tests/e2e/global-setup.ts"],
   },
 });
