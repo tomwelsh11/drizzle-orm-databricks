@@ -81,9 +81,7 @@ describe.skipIf(!hasCredentials())("Error handling (e2e)", () => {
     const db = getDb();
     const err = await db.execute(sql.raw("SELECT 1/0 AS result")).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(DrizzleQueryError);
-    expect((err as DrizzleQueryError).cause!.message).toMatch(
-      /DIVIDE_BY_ZERO|Division by zero/,
-    );
+    expect((err as DrizzleQueryError).cause!.message).toMatch(/DIVIDE_BY_ZERO|Division by zero/);
   });
 
   it("throws on duplicate column name in CREATE TABLE", async () => {
