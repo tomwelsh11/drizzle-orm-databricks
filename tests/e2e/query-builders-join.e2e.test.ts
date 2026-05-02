@@ -269,6 +269,47 @@ describe.skipIf(!hasCredentials())("Query builder JOINs (e2e)", () => {
     expect(rows).toEqual([]);
   });
 
+  it("CROSS JOIN returns the Cartesian product", async () => {
+    const db = getDb();
+    const rows = await db.select().from(users).crossJoin(posts);
+
+    // 4 users × 5 posts = 20 rows
+    expect(rows).toHaveLength(20);
+    for (const row of rows) {
+      expect(row.qb_join_users).not.toBeNull();
+      expect(row.qb_join_posts).not.toBeNull();
+    }
+  });
+
+  it("CROSS JOIN with partial select", async () => {
+    const db = getDb();
+    const rows = await db
+      .select({ userName: users.name, postTitle: posts.title })
+      .from(users)
+      .crossJoin(posts);
+
+    expect(rows).toHaveLength(20);
+    for (const row of rows) {
+      expect(typeof row.userName).toBe("string");
+      expect(typeof row.postTitle).toBe("string");
+    }
+  });
+
+  it("CROSS JOIN with WHERE filters the product", async () => {
+    const db = getDb();
+    const rows = await db
+      .select()
+      .from(users)
+      .crossJoin(posts)
+      .where(eq(users.id, "u1"));
+
+    // u1 × 5 posts = 5 rows
+    expect(rows).toHaveLength(5);
+    for (const row of rows) {
+      expect(row.qb_join_users.id).toBe("u1");
+    }
+  });
+
   it("LEFT JOIN combined with WHERE filtering on left side", async () => {
     const db = getDb();
     const rows = await db

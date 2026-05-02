@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { DrizzleQueryError } from "drizzle-orm/errors";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { DatabricksUnsupportedError } from "../../src/errors";
@@ -22,6 +23,15 @@ describe.skipIf(!hasCredentials())("Error handling (e2e)", () => {
   it("throws on invalid SQL syntax", async () => {
     const db = getDb();
     await expect(db.execute(sql.raw("SELECTTTT 1"))).rejects.toThrow();
+  });
+
+  it("wraps driver errors in DrizzleQueryError with SQL and params", async () => {
+    const db = getDb();
+    const err = await db.execute(sql.raw("SELECTTTT 1")).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(DrizzleQueryError);
+    expect((err as DrizzleQueryError).query).toBe("SELECTTTT 1");
+    expect((err as DrizzleQueryError).params).toEqual([]);
+    expect((err as DrizzleQueryError).cause).toBeDefined();
   });
 
   it("throws when querying a non-existent table", async () => {
