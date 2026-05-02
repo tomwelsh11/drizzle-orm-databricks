@@ -126,6 +126,34 @@ describe('DatabricksDatabase', () => {
     expect(mockClient.recorded[0]!.params).toEqual(['Alicia', 'u1']);
   });
 
+  it('db.selectDistinct().from() generates SELECT DISTINCT', async () => {
+    const mockClient = new MockDBSQLClient();
+    mockClient.queueResponse([{ name: 'Alice' }]);
+    const db = drizzle({ client: mockClient as never });
+
+    const rows = await db.selectDistinct({ name: users.name }).from(users);
+    expect(rows).toEqual([{ name: 'Alice' }]);
+    expect(mockClient.recorded[0]!.sql).toContain('select distinct');
+  });
+
+  it('db.run() returns raw result shape', async () => {
+    const mockClient = new MockDBSQLClient();
+    mockClient.queueResponse([{ id: 1 }]);
+    const db = drizzle({ client: mockClient as never });
+
+    const result = await db.run(sql`INSERT INTO t VALUES (1)`);
+    expect(result).toEqual([{ id: 1 }]);
+  });
+
+  it('db.all() returns row array directly', async () => {
+    const mockClient = new MockDBSQLClient();
+    mockClient.queueResponse([{ id: 1 }, { id: 2 }]);
+    const db = drizzle({ client: mockClient as never });
+
+    const rows = await db.all(sql`SELECT * FROM t`);
+    expect(rows).toEqual([{ id: 1 }, { id: 2 }]);
+  });
+
   it('db.delete(table).where() executes correctly', async () => {
     const mockClient = new MockDBSQLClient();
     mockClient.queueResponse([]);
