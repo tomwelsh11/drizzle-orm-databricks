@@ -1,6 +1,6 @@
 # drizzle-orm-adapter-databricks
 
-A standalone [Drizzle ORM](https://orm.drizzle.team) adapter for [Databricks SQL](https://www.databricks.com/product/databricks-sql) warehouses. Built from Drizzle's base abstractions with Databricks-native column types and Spark SQL generation, it wraps the official `@databricks/sql` Node.js driver.
+A standalone [Drizzle ORM](https://orm.drizzle.team) adapter for [Databricks SQL](https://www.databricks.com/product/databricks-sql) warehouses. Built from Drizzle's base abstractions — **zero dependency on `mysql-core`, `pg-core`, or `sqlite-core`** — with Databricks-native column types, Spark SQL generation, and the official `@databricks/sql` Node.js driver.
 
 ## Installation
 
@@ -8,14 +8,15 @@ A standalone [Drizzle ORM](https://orm.drizzle.team) adapter for [Databricks SQL
 pnpm add drizzle-orm-adapter-databricks drizzle-orm @databricks/sql
 ```
 
-`drizzle-orm` and `@databricks/sql` are peer dependencies — install them in your application.
+`drizzle-orm` and `@databricks/sql` are peer dependencies.
 
 ## Quick start
 
 ```ts
 import { drizzle, databricksTable, string, bigint, timestamp, boolean } from 'drizzle-orm-adapter-databricks';
-import { sql, eq } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 
+// Define tables with Databricks-native column types
 const users = databricksTable('users', {
   id: string('id').primaryKey(),
   email: string('email').notNull(),
@@ -24,30 +25,35 @@ const users = databricksTable('users', {
   createdAt: timestamp('created_at').notNull(),
 });
 
+// Connect with PAT or service principal
 const db = drizzle({
   host: process.env.DATABRICKS_HOST!,
   path: process.env.DATABRICKS_SQL_PATH!,
   token: process.env.DATABRICKS_TOKEN!,
-  catalog: 'main',
-  schema: 'analytics',
 });
 
-// Execute queries using the sql template tag
-const rows = await db.execute(
-  sql`SELECT * FROM ${users} WHERE ${users.email} = ${'a@b.com'}`
+// Type-safe queries using table and column references
+const rows = await db.execute<{ id: string; email: string }>(
+  sql`SELECT ${users.id}, ${users.email} FROM ${users} WHERE ${users.active} = ${true}`
 );
 
+// Parameterised inserts — safe from SQL injection
 await db.execute(
   sql`INSERT INTO ${users} (${users.id}, ${users.email}, ${users.loginCount}, ${users.active}, ${users.createdAt})
       VALUES (${crypto.randomUUID()}, ${'a@b.com'}, ${0}, ${true}, ${new Date().toISOString()})`
 );
 
+// Updates and deletes use the same column references
+await db.execute(
+  sql`UPDATE ${users} SET ${users.active} = ${false} WHERE ${users.id} = ${'u1'}`
+);
+
 await db.$close();
 ```
 
-## Configuration
+## Authentication
 
-### Option 1: personal access token (PAT)
+### Personal access token (PAT)
 
 ```ts
 const db = drizzle({
@@ -59,7 +65,7 @@ const db = drizzle({
 });
 ```
 
-### Option 2: service principal (OAuth M2M)
+### Service principal (OAuth M2M)
 
 ```ts
 const db = drizzle({
@@ -72,9 +78,9 @@ const db = drizzle({
 });
 ```
 
-Uses Databricks OAuth machine-to-machine flow. Register a service principal in your Databricks workspace and grant it access to the SQL warehouse.
+Uses Databricks OAuth machine-to-machine flow. Register a service principal in your workspace and grant it SQL warehouse access.
 
-### Option 3: bring your own DBSQLClient
+### Bring your own DBSQLClient
 
 ```ts
 import { DBSQLClient } from '@databricks/sql';
@@ -85,9 +91,9 @@ await client.connect({ host, path, token });
 const db = drizzle({ client, catalog: 'main', schema: 'default' });
 ```
 
-When you pass an existing client, `db.$close()` will close the active session but leave the client open — you own its lifecycle.
+When you pass an existing client, `db.$close()` closes the session but leaves the client open — you own its lifecycle.
 
-## Databricks-native column types
+## Column types
 
 All column types map directly to Spark SQL types:
 
@@ -136,7 +142,7 @@ export const events = databricksTable('events', {
 ## Schema-qualified tables
 
 ```ts
-import { databricksSchema } from 'drizzle-orm-adapter-databricks';
+import { databricksSchema, string } from 'drizzle-orm-adapter-databricks';
 
 const analytics = databricksSchema('analytics');
 
@@ -154,26 +160,47 @@ import { migrate } from 'drizzle-orm-adapter-databricks/migrator';
 await migrate(db, { migrationsFolder: './drizzle' });
 ```
 
-The migrator records applied migrations in a `__drizzle_migrations` Delta table. Write migration SQL in Spark SQL dialect manually — drizzle-kit does not yet support Databricks.
+The migrator tracks applied migrations in a `__drizzle_migrations` Delta table. Write migration SQL in Spark SQL dialect — drizzle-kit does not yet support Databricks.
+
+## Environment variables
+
+```bash
+# Required
+DATABRICKS_HOST=adb-1234567890123456.7.azuredatabricks.net
+DATABRICKS_SQL_PATH=/sql/1.0/warehouses/abc123
+
+# Auth: provide EITHER a PAT or service principal credentials
+DATABRICKS_TOKEN=dapi...
+# DATABRICKS_CLIENT_ID=...
+# DATABRICKS_CLIENT_SECRET=...
+
+# Optional
+DATABRICKS_CATALOG=main
+DATABRICKS_SCHEMA=default
+```
+
+Note: `DATABRICKS_HOST` is the hostname only — no `https://` prefix.
 
 ## Limitations
 
+- **No query builders yet.** This release provides `db.execute()` with Drizzle's `sql` template tag for type-safe table/column references and parameterised queries. Full query builder support (`.select().from()`, `.insert().values()`) is planned for the next release.
 - **No `RETURNING` clause.** Databricks does not support RETURNING on INSERT/UPDATE/DELETE. Generate primary keys client-side (UUIDs) and SELECT after insert.
-- **No multi-statement transactions.** `db.session.transaction()` will throw `DatabricksUnsupportedError`. Databricks provides single-statement atomicity only.
+- **No multi-statement transactions.** `db.session.transaction()` throws `DatabricksUnsupportedError`. Databricks provides single-statement atomicity only.
 - **No drizzle-kit support.** drizzle-kit does not understand Spark SQL. Write DDL manually.
 - **Foreign keys are informational only.** Databricks accepts FK syntax but does not enforce referential integrity.
 - **Unique constraints are not enforced.** Databricks accepts UNIQUE syntax but does not enforce uniqueness.
 - **No `AUTO_INCREMENT`.** Databricks `IDENTITY` columns disable concurrent writes — use UUIDs.
-- **Query builders.** This adapter provides `db.execute()` with the `sql` template tag. Full query builder support (`.select().from()`, `.insert().values()`) is planned for a future release.
 
 ## Testing
 
 ```bash
-pnpm test          # unit tests (mocked @databricks/sql)
-pnpm test:e2e      # against a real Databricks SQL warehouse — requires .env
+pnpm test          # 101 unit tests (mocked @databricks/sql)
+pnpm test:e2e      # E2E against a real Databricks SQL warehouse
 pnpm test:types    # tsc --noEmit
 pnpm test:coverage # v8 coverage report
 ```
+
+CI runs unit tests on Node 18/20/22 and E2E tests against a live Databricks warehouse using service principal authentication.
 
 ## License
 
