@@ -9,7 +9,7 @@ import type { Casing } from "drizzle-orm/utils";
 import { ViewBaseConfig } from "drizzle-orm/view-common";
 
 import { DatabricksColumn } from "./columns/common";
-import { DatabricksTable } from "./table";
+import { CatalogSymbol, DatabricksTable } from "./table";
 
 // Drizzle internal symbols not typed for external use
 const TableSymbol = (Table as any).Symbol as {
@@ -60,6 +60,22 @@ export class DatabricksDialect {
       escapeString: this.escapeString,
       invokeSource,
     });
+  }
+
+  qualifyTable(table: Table): SQL {
+    const schema = (table as any)[TableSymbol.Schema] as string | undefined;
+    const catalog = (table as any)[CatalogSymbol] as string | undefined;
+    const name = (table as any)[TableSymbol.OriginalName] as string;
+    if (catalog && schema) {
+      return sql`${sql.identifier(catalog)}.${sql.identifier(schema)}.${sql.identifier(name)}`;
+    }
+    if (catalog) {
+      return sql`${sql.identifier(catalog)}.${sql.identifier(name)}`;
+    }
+    if (schema) {
+      return sql`${sql.identifier(schema)}.${sql.identifier(name)}`;
+    }
+    return sql`${sql.identifier(name)}`;
   }
 
   buildWithCTE(queries: Subquery[] | undefined): SQL | undefined {
@@ -235,11 +251,12 @@ export class DatabricksDialect {
     const selection = this.buildSelection(fieldsList, { isSingleTable });
 
     const tableSql = (() => {
-      if (
-        is(table, Table) &&
-        (table as any)[TableSymbol.OriginalName] !== (table as any)[TableSymbol.Name]
-      ) {
-        return sql`${sql.identifier((table as any)[TableSymbol.OriginalName])} ${sql.identifier((table as any)[TableSymbol.Name])}`;
+      if (is(table, Table)) {
+        const qualified = this.qualifyTable(table as Table);
+        if ((table as any)[TableSymbol.OriginalName] !== (table as any)[TableSymbol.Name]) {
+          return sql`${qualified} ${sql.identifier((table as any)[TableSymbol.Name])}`;
+        }
+        return qualified;
       }
       return table as unknown as SQL;
     })();
@@ -257,11 +274,11 @@ export class DatabricksDialect {
 
         if (is(table2, Table)) {
           const tableName = (table2 as any)[TableSymbol.Name] as string;
-          const tableSchema = (table2 as any)[TableSymbol.Schema] as string | undefined;
           const origTableName = (table2 as any)[TableSymbol.OriginalName] as string;
           const alias = tableName === origTableName ? undefined : joinMeta.alias;
+          const qualified = this.qualifyTable(table2 as Table);
           joinsArray.push(
-            sql`${sql.raw(joinMeta.joinType)} join${lateralSql} ${tableSchema ? sql`${sql.identifier(tableSchema)}.` : undefined}${sql.identifier(origTableName)}${alias && sql` ${sql.identifier(alias)}`}${onClause}`,
+            sql`${sql.raw(joinMeta.joinType)} join${lateralSql} ${qualified}${alias && sql` ${sql.identifier(alias)}`}${onClause}`,
           );
         } else if (is(table2, View)) {
           const viewName = (table2 as any)[ViewBaseConfig].name as string;
@@ -446,8 +463,9 @@ export class DatabricksDialect {
     const onConflictSql = onConflict ? sql` on duplicate key ${onConflict}` : undefined;
     const withSql = this.buildWithCTE(withList);
 
+    const tableSql = this.qualifyTable(table);
     return {
-      sql: sql`${withSql}insert into ${table} (${insertOrder}) ${valuesSql}${onConflictSql}`,
+      sql: sql`${withSql}insert into ${tableSql} (${insertOrder}) ${valuesSql}${onConflictSql}`,
       generatedIds: generatedIdsResponse,
     };
   }
@@ -472,7 +490,8 @@ export class DatabricksDialect {
     const whereSql = where ? sql` where ${where}` : undefined;
     const orderBySql = this.buildOrderBy(orderBy);
     const limitSql = this.buildLimit(limit);
-    return sql`${withSql}update ${table} set ${setSql}${whereSql}${orderBySql}${limitSql}`;
+    const tableSql = this.qualifyTable(table);
+    return sql`${withSql}update ${tableSql} set ${setSql}${whereSql}${orderBySql}${limitSql}`;
   }
 
   buildDeleteQuery({
@@ -492,6 +511,7 @@ export class DatabricksDialect {
     const whereSql = where ? sql` where ${where}` : undefined;
     const orderBySql = this.buildOrderBy(orderBy);
     const limitSql = this.buildLimit(limit);
-    return sql`${withSql}delete from ${table}${whereSql}${orderBySql}${limitSql}`;
+    const tableSql = this.qualifyTable(table);
+    return sql`${withSql}delete from ${tableSql}${whereSql}${orderBySql}${limitSql}`;
   }
 }
