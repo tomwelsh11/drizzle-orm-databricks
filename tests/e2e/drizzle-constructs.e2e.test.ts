@@ -37,31 +37,42 @@ const events = databricksTable(eventsName, {
   occurredAt: timestampNtz('occurred_at'),
 });
 
+const bt = (n: string) => '`' + n + '`';
+
+function insertUsers(tbl: string, ...rows: Array<[string, string, number, number, boolean, number, string, string]>) {
+  const values = rows.map(
+    ([id, name, age, loginCount, active, score, balance, createdAt]) =>
+      `('${id}', '${name}', ${age}, ${loginCount}, ${active}, ${score}, ${balance}, TIMESTAMP'${createdAt}')`,
+  ).join(', ');
+  return sql.raw(
+    `INSERT INTO ${bt(tbl)} (id, name, age, login_count, active, score, balance, created_at) VALUES ${values}`,
+  );
+}
+
 describe.skipIf(!hasCredentials())('Drizzle constructs (e2e)', () => {
   beforeAll(async () => {
     const db = getDb();
     await dropTable(db, usersName);
     await dropTable(db, eventsName);
-    await db.execute(
-      sql`CREATE TABLE IF NOT EXISTS ${users} (
-        ${sql.identifier('id')} STRING,
-        ${sql.identifier('name')} STRING,
-        ${sql.identifier('age')} INT,
-        ${sql.identifier('login_count')} BIGINT,
-        ${sql.identifier('active')} BOOLEAN,
-        ${sql.identifier('score')} DOUBLE,
-        ${sql.identifier('balance')} DECIMAL(12, 2),
-        ${sql.identifier('created_at')} TIMESTAMP
+    await db.execute(sql.raw(
+      `CREATE TABLE IF NOT EXISTS ${bt(usersName)} (
+        id STRING, name STRING, age INT, login_count BIGINT,
+        active BOOLEAN, score DOUBLE, balance DECIMAL(12, 2),
+        created_at TIMESTAMP
       ) USING DELTA`,
-    );
-    await db.execute(
-      sql`CREATE TABLE IF NOT EXISTS ${events} (
-        ${sql.identifier('id')} INT,
-        ${sql.identifier('user_id')} STRING,
-        ${sql.identifier('payload')} VARIANT,
-        ${sql.identifier('occurred_at')} TIMESTAMP_NTZ
+    ));
+    await db.execute(sql.raw(
+      `CREATE TABLE IF NOT EXISTS ${bt(eventsName)} (
+        id INT, user_id STRING, payload VARIANT, occurred_at TIMESTAMP_NTZ
       ) USING DELTA`,
-    );
+    ));
+    await db.execute(insertUsers(usersName,
+      ['u1', 'Alice', 30, 100, true, 3.14, '999.99', '2024-06-15 10:30:00'],
+      ['u2', 'Bob', 25, 50, false, 2.71, '123.45', '2024-07-01 08:00:00'],
+    ));
+    await db.execute(sql.raw(
+      `INSERT INTO ${bt(eventsName)} VALUES (1, 'u1', PARSE_JSON('{"action":"login","ip":"1.2.3.4"}'), TIMESTAMP_NTZ'2024-06-15 10:30:00')`,
+    ));
   });
 
   afterAll(async () => {
@@ -74,13 +85,20 @@ describe.skipIf(!hasCredentials())('Drizzle constructs (e2e)', () => {
     }
   });
 
-  it('uses table reference in INSERT and SELECT', async () => {
-    const db = getDb();
-    await db.execute(
-      sql`INSERT INTO ${users} (${users.id}, ${users.name}, ${users.age}, ${users.loginCount}, ${users.active}, ${users.score}, ${users.balance}, ${users.createdAt})
-          VALUES (${'u1'}, ${'Alice'}, ${30}, ${100}, ${true}, ${3.14}, ${'999.99'}, ${'2024-06-15T10:30:00Z'})`,
-    );
+  // -- Table reference in SELECT --
 
+  it('uses table reference in FROM clause', async () => {
+    const db = getDb();
+    const rows = await db.execute<Record<string, unknown>>(
+      sql`SELECT * FROM ${users}`,
+    );
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+  });
+
+  // -- Column references in SELECT, WHERE, ORDER BY --
+
+  it('uses column references in SELECT and WHERE', async () => {
+    const db = getDb();
     const rows = await db.execute<Record<string, unknown>>(
       sql`SELECT ${users.id}, ${users.name}, ${users.age} FROM ${users} WHERE ${users.id} = ${'u1'}`,
     );
@@ -88,13 +106,8 @@ describe.skipIf(!hasCredentials())('Drizzle constructs (e2e)', () => {
     expect(rows[0]).toMatchObject({ id: 'u1', name: 'Alice', age: 30 });
   });
 
-  it('references multiple columns in WHERE with AND', async () => {
+  it('uses column references with AND in WHERE', async () => {
     const db = getDb();
-    await db.execute(
-      sql`INSERT INTO ${users} (${users.id}, ${users.name}, ${users.age}, ${users.loginCount}, ${users.active}, ${users.score}, ${users.balance}, ${users.createdAt})
-          VALUES (${'u2'}, ${'Bob'}, ${25}, ${50}, ${false}, ${2.71}, ${'123.45'}, ${'2024-07-01T08:00:00Z'})`,
-    );
-
     const rows = await db.execute<Record<string, unknown>>(
       sql`SELECT ${users.name} FROM ${users} WHERE ${users.age} > ${20} AND ${users.active} = ${true}`,
     );
@@ -114,6 +127,8 @@ describe.skipIf(!hasCredentials())('Drizzle constructs (e2e)', () => {
     }
   });
 
+  // -- Column references in UPDATE and DELETE --
+
   it('uses column references in UPDATE SET and WHERE', async () => {
     const db = getDb();
     await db.execute(
@@ -127,10 +142,10 @@ describe.skipIf(!hasCredentials())('Drizzle constructs (e2e)', () => {
 
   it('uses column references in DELETE WHERE', async () => {
     const db = getDb();
-    await db.execute(
-      sql`INSERT INTO ${users} (${users.id}, ${users.name}, ${users.age}, ${users.loginCount}, ${users.active}, ${users.score}, ${users.balance}, ${users.createdAt})
-          VALUES (${'u_del'}, ${'ToDelete'}, ${99}, ${0}, ${false}, ${0.0}, ${'0.00'}, ${'2024-01-01T00:00:00Z'})`,
-    );
+    await db.execute(sql.raw(
+      `INSERT INTO ${bt(usersName)} (id, name, age, login_count, active, score, balance, created_at)
+       VALUES ('u_del', 'ToDelete', 99, 0, false, 0.0, 0.00, TIMESTAMP'2024-01-01 00:00:00')`,
+    ));
     await db.execute(
       sql`DELETE FROM ${users} WHERE ${users.id} = ${'u_del'}`,
     );
@@ -140,13 +155,10 @@ describe.skipIf(!hasCredentials())('Drizzle constructs (e2e)', () => {
     expect(rows).toEqual([]);
   });
 
-  it('inserts and reads VARIANT via column reference', async () => {
+  // -- VARIANT column reference --
+
+  it('reads VARIANT via column reference', async () => {
     const db = getDb();
-    const payload = JSON.stringify({ action: 'login', ip: '1.2.3.4' });
-    await db.execute(
-      sql`INSERT INTO ${events} (${events.id}, ${events.userId}, ${events.payload}, ${events.occurredAt})
-          VALUES (${1}, ${'u1'}, PARSE_JSON(${payload}), ${'2024-06-15T10:30:00'})`,
-    );
     const rows = await db.execute<Record<string, unknown>>(
       sql`SELECT ${events.id}, ${events.payload} FROM ${events} WHERE ${events.userId} = ${'u1'}`,
     );
@@ -155,6 +167,8 @@ describe.skipIf(!hasCredentials())('Drizzle constructs (e2e)', () => {
     const parsed = typeof val === 'string' ? JSON.parse(val) : val;
     expect(parsed).toMatchObject({ action: 'login', ip: '1.2.3.4' });
   });
+
+  // -- Fragment composition --
 
   it('composes fragments using table and column references', async () => {
     const db = getDb();
@@ -168,6 +182,8 @@ describe.skipIf(!hasCredentials())('Drizzle constructs (e2e)', () => {
     expect(rows.length).toBeGreaterThanOrEqual(1);
   });
 
+  // -- sql.identifier --
+
   it('uses sql.identifier for dynamic column selection', async () => {
     const db = getDb();
     const dynamicCol = 'name';
@@ -178,6 +194,8 @@ describe.skipIf(!hasCredentials())('Drizzle constructs (e2e)', () => {
     expect(rows[0]![dynamicCol]).toBeDefined();
   });
 
+  // -- Aggregation with column refs --
+
   it('references table in aggregate with column ref in GROUP BY', async () => {
     const db = getDb();
     const rows = await db.execute<{ active: boolean; cnt: number }>(
@@ -186,6 +204,8 @@ describe.skipIf(!hasCredentials())('Drizzle constructs (e2e)', () => {
     expect(rows.length).toBeGreaterThanOrEqual(1);
     expect(rows.every((r) => typeof r.cnt === 'number' || typeof r.cnt === 'string')).toBe(true);
   });
+
+  // -- JOIN with column refs across tables --
 
   it('joins two tables using column references', async () => {
     const db = getDb();
@@ -199,6 +219,8 @@ describe.skipIf(!hasCredentials())('Drizzle constructs (e2e)', () => {
     expect(rows[0]!.name).toBeDefined();
     expect(rows[0]!.event_id).toBeDefined();
   });
+
+  // -- Schema-qualified table --
 
   it('uses databricksSchema for schema-qualified table reference', async () => {
     const db = getDb();

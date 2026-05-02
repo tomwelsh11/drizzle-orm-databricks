@@ -35,7 +35,7 @@ export async function migrate<TSchema extends Record<string, unknown>>(
 
     await db.execute(sql`
       INSERT INTO ${sql.identifier(migrationsTable)} (hash, created_at)
-      VALUES (${migration.hash}, ${migration.folderMillis})
+      VALUES (${migration.hash}, CAST(${String(migration.folderMillis)} AS BIGINT))
     `);
   }
 }
