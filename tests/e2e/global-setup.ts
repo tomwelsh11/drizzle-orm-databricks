@@ -30,6 +30,9 @@ export async function setup(): Promise<void> {
     } else {
       await db.execute(sql`CREATE SCHEMA IF NOT EXISTS ${sql.identifier(schema)}`);
     }
+  } catch {
+    // Schema may already exist or the principal may lack CREATE SCHEMA — not fatal.
+    // Tests will fail with a clear error if the schema is truly missing.
   } finally {
     await db.$close();
   }
