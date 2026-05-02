@@ -10,15 +10,15 @@
     "orm",
     "sql"
   ],
-  "homepage": "https://github.com/tomwelsh11/drizzle-orm-adapter-databricks#readme",
+  "homepage": "https://github.com/tomwelsh11/drizzle-orm-databricks#readme",
   "bugs": {
-    "url": "https://github.com/tomwelsh11/drizzle-orm-adapter-databricks/issues"
+    "url": "https://github.com/tomwelsh11/drizzle-orm-databricks/issues"
   },
   "license": "MIT",
   "author": "Tom Welsh <top.year8343@fastmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tomwelsh11/drizzle-orm-adapter-databricks.git"
+    "url": "git+https://github.com/tomwelsh11/drizzle-orm-databricks.git"
   },
   "files": [
     "dist",
