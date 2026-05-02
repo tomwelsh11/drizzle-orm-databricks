@@ -1,11 +1,11 @@
-# drizzle-orm-adapter-databricks
+# drizzle-orm-databricks
 
 A standalone [Drizzle ORM](https://orm.drizzle.team) adapter for [Databricks SQL](https://www.databricks.com/product/databricks-sql) warehouses. Built from Drizzle's base abstractions — **zero dependency on `mysql-core`, `pg-core`, or `sqlite-core`** — with Databricks-native column types, Spark SQL generation, and the official `@databricks/sql` Node.js driver.
 
 ## Installation
 
 ```bash
-pnpm add drizzle-orm-adapter-databricks drizzle-orm @databricks/sql
+pnpm add drizzle-orm-databricks drizzle-orm @databricks/sql
 ```
 
 `drizzle-orm` and `@databricks/sql` are peer dependencies.
@@ -20,7 +20,7 @@ import {
   bigint,
   timestamp,
   boolean,
-} from "drizzle-orm-adapter-databricks";
+} from "drizzle-orm-databricks";
 import { eq } from "drizzle-orm";
 
 const users = databricksTable("users", {
@@ -119,7 +119,7 @@ import {
   timestampNtz,
   binary,
   variant,
-} from "drizzle-orm-adapter-databricks";
+} from "drizzle-orm-databricks";
 
 const events = databricksTable("events", {
   id: string("id").primaryKey(),
@@ -164,7 +164,7 @@ Databricks Unity Catalog organises data in a 3-tier namespace: `catalog.schema.t
 ### Schema-qualified tables
 
 ```ts
-import { databricksSchema, string, int } from "drizzle-orm-adapter-databricks";
+import { databricksSchema, string, int } from "drizzle-orm-databricks";
 
 const analytics = databricksSchema("analytics");
 
@@ -181,7 +181,7 @@ await db.select().from(events);
 ### Fully qualified tables (catalog.schema.table)
 
 ```ts
-import { databricksCatalog, string, int } from "drizzle-orm-adapter-databricks";
+import { databricksCatalog, string, int } from "drizzle-orm-databricks";
 
 const prod = databricksCatalog("prod");
 
@@ -210,7 +210,7 @@ await db.select().from(logs);
 Override the catalog and/or schema at query time without changing the table definition. Useful for routing queries to staging/production catalogs dynamically:
 
 ```ts
-import { databricksTable, string, int } from "drizzle-orm-adapter-databricks";
+import { databricksTable, string, int } from "drizzle-orm-databricks";
 
 const users = databricksTable("users", {
   id: string("id"),
@@ -327,7 +327,7 @@ import {
   intersectAll,
   except,
   exceptAll,
-} from "drizzle-orm-adapter-databricks";
+} from "drizzle-orm-databricks";
 
 const combined = await union(
   db.select({ id: users.id }).from(users),
@@ -456,7 +456,7 @@ Adapter-specific errors:
 ## Migrations
 
 ```ts
-import { migrate } from "drizzle-orm-adapter-databricks/migrator";
+import { migrate } from "drizzle-orm-databricks/migrator";
 
 await migrate(db, { migrationsFolder: "./drizzle" });
 ```
