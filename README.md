@@ -272,6 +272,10 @@ Tested on Node 22 and 24.
 - **Authentication** — PAT, OAuth M2M (service principal), bring-your-own `DBSQLClient`
 - **Column types** — all 16 Spark SQL types (STRING through VARIANT)
 - **Schema-qualified tables** — `databricksSchema("name").table(...)`
+- **INSERT INTO ... SELECT** — compose inserts from subqueries
+- **WITH (CTEs) on DML** — use CTEs with INSERT, UPDATE, DELETE
+- **CROSS JOIN** — `crossJoin()` support
+- **DrizzleQueryError** — wraps driver errors with SQL string, params, and stack traces
 - **Migrations** — `migrate()` with Delta table tracking
 - **Raw SQL** — `db.execute(sql`...`)`, `sql.raw()`, `sql.identifier()`
 - **Session management** — lazy connection, automatic stale session retry, clean shutdown
@@ -288,13 +292,22 @@ Tested on Node 22 and 24.
 
 ## Roadmap
 
+### Shipped
+
+- [x] `INSERT INTO ... SELECT` — compose inserts from subqueries
+- [x] `WITH` (CTEs) on DML — use CTEs with INSERT, UPDATE, DELETE
+- [x] `CROSS JOIN` support
+- [x] `DrizzleQueryError` wrapper — surface SQL string, params, and stack traces on driver errors
+
+### In progress
+
+- [ ] Unity Catalog 3-tier namespace — `databricksCatalog("cat").schema("sch").table(...)` and per-query overrides (#7)
+- [ ] Connection pooling and multi-session support (#6)
+
 ### Near-term
 
-- [ ] `INSERT INTO ... SELECT` — compose inserts from subqueries (supported since drizzle-orm 0.36.3)
-- [ ] `WITH` (CTEs) on DML — use CTEs with INSERT, UPDATE, DELETE (supported since drizzle-orm 0.39.0)
-- [ ] `CROSS JOIN` support (supported since drizzle-orm 0.43.0)
-- [ ] `DrizzleQueryError` wrapper — surface SQL string, params, and stack traces on driver errors (available since drizzle-orm 0.44.0)
 - [ ] `bigint`/`number` modes for `decimal` columns (available since drizzle-orm 0.41.0)
+- [ ] CTE parameter binding fix — ordinal params across CTE + DML boundaries on Databricks
 
 ### Medium-term
 
@@ -302,7 +315,6 @@ Tested on Node 22 and 24.
 - [ ] Prepared statements
 - [ ] `MERGE INTO` (Databricks upsert)
 - [ ] `RETURNING` emulation (SELECT-after-write for single-row inserts)
-- [ ] Connection pooling and multi-session support
 
 ### Long-term
 
