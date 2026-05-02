@@ -135,7 +135,7 @@ export class DatabricksSelectQueryBuilderBase<
   }
 
   private createJoin(joinType: string) {
-    return (table: DatabricksTable<any> | Subquery | SQL, on: SQL | ((fields: any) => SQL)) => {
+    return (table: DatabricksTable<any> | Subquery | SQL, on?: SQL | ((fields: any) => SQL)) => {
       const baseTableName = this.tableName;
       const tableName = getTableLikeName(table);
 
@@ -194,6 +194,7 @@ export class DatabricksSelectQueryBuilderBase<
             this.joinsNotNullableMap[tableName] = true;
             break;
           case "inner":
+          case "cross":
             this.joinsNotNullableMap[tableName] = true;
             break;
           case "full":
@@ -212,6 +213,7 @@ export class DatabricksSelectQueryBuilderBase<
   rightJoin = this.createJoin("right");
   innerJoin = this.createJoin("inner");
   fullJoin = this.createJoin("full");
+  crossJoin = this.createJoin("cross");
 
   private createSetOperator(type: string, isAll: boolean) {
     return (rightSelection: any) => {

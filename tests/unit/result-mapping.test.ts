@@ -258,12 +258,19 @@ describe("Driver integration edge cases", () => {
     );
   });
 
-  it("propagates errors from the underlying client", async () => {
+  it("propagates errors from the underlying client wrapped in DrizzleQueryError", async () => {
+    const { DrizzleQueryError } = await import("drizzle-orm/errors");
     const mockClient = new MockDBSQLClient();
     mockClient.queueError(new Error("fail"));
     const db = drizzle({ client: mockClient as never });
 
-    await expect(db.select().from(users)).rejects.toThrow("fail");
+    const err = await db
+      .select()
+      .from(users)
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(DrizzleQueryError);
+    expect((err as InstanceType<typeof DrizzleQueryError>).cause!.message).toBe("fail");
+    expect((err as InstanceType<typeof DrizzleQueryError>).query).toContain("select");
   });
 
   it("logger receives correct SQL and params", async () => {

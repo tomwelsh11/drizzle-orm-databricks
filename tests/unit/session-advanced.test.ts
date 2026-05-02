@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { DrizzleQueryError } from "drizzle-orm/errors";
 import { NoopLogger } from "drizzle-orm/logger";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -47,6 +48,46 @@ describe("Session logger integration", () => {
     const session = new DatabricksSession(sessionManager, dialect);
     mockClient.queueResponse([]);
     await expect(session.execute(sql`SELECT 1`)).resolves.toBeDefined();
+  });
+});
+
+describe("DrizzleQueryError wrapping", () => {
+  let mockClient: MockDBSQLClient;
+  let sessionManager: SessionManager;
+  let dialect: DatabricksDialect;
+
+  beforeEach(() => {
+    mockClient = new MockDBSQLClient();
+    sessionManager = new SessionManager({ client: mockClient as never });
+    dialect = new DatabricksDialect();
+  });
+
+  it("session.execute() wraps driver errors in DrizzleQueryError", async () => {
+    mockClient.queueError(new Error("connection lost"));
+    const session = new DatabricksSession(sessionManager, dialect);
+
+    const err = await session.execute(sql`SELECT 1`).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(DrizzleQueryError);
+    expect((err as DrizzleQueryError).query).toBe("SELECT 1");
+    expect((err as DrizzleQueryError).params).toEqual([]);
+    expect((err as DrizzleQueryError).cause!.message).toBe("connection lost");
+  });
+
+  it("preparedQuery.execute() wraps driver errors in DrizzleQueryError", async () => {
+    mockClient.queueError(new Error("timeout"));
+    const prepared = new DatabricksPreparedQuery(
+      sessionManager,
+      "SELECT ? AS n",
+      [42],
+      new NoopLogger(),
+      undefined,
+    );
+
+    const err = await prepared.execute().catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(DrizzleQueryError);
+    expect((err as DrizzleQueryError).query).toBe("SELECT ? AS n");
+    expect((err as DrizzleQueryError).params).toEqual([42]);
+    expect((err as DrizzleQueryError).cause!.message).toBe("timeout");
   });
 });
 
