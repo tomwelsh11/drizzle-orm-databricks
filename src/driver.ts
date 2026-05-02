@@ -14,7 +14,7 @@ import {
   DatabricksUpdateBuilder,
 } from "./query-builders";
 import { DatabricksSession, type DatabricksRawQueryResult } from "./session";
-import type { DatabricksTable } from "./table";
+import type { DatabricksTable, NamespaceOverride } from "./table";
 import type {
   DatabricksClientConfig,
   DatabricksConfig,
@@ -58,16 +58,25 @@ export class DatabricksDatabase<TSchema extends Record<string, unknown> = Record
     });
   }
 
-  insert<TTable extends DatabricksTable<any>>(table: TTable): DatabricksInsertBuilder<TTable> {
-    return new DatabricksInsertBuilder(table, this.session, this.dialect);
+  insert<TTable extends DatabricksTable<any>>(
+    table: TTable,
+    options?: NamespaceOverride,
+  ): DatabricksInsertBuilder<TTable> {
+    return new DatabricksInsertBuilder(table, this.session, this.dialect, undefined, options);
   }
 
-  update<TTable extends DatabricksTable<any>>(table: TTable): DatabricksUpdateBuilder<TTable> {
-    return new DatabricksUpdateBuilder(table, this.session, this.dialect);
+  update<TTable extends DatabricksTable<any>>(
+    table: TTable,
+    options?: NamespaceOverride,
+  ): DatabricksUpdateBuilder<TTable> {
+    return new DatabricksUpdateBuilder(table, this.session, this.dialect, undefined, options);
   }
 
-  delete<TTable extends DatabricksTable<any>>(table: TTable): DatabricksDeleteBase<TTable> {
-    return new DatabricksDeleteBase(table, this.session, this.dialect);
+  delete<TTable extends DatabricksTable<any>>(
+    table: TTable,
+    options?: NamespaceOverride,
+  ): DatabricksDeleteBase<TTable> {
+    return new DatabricksDeleteBase(table, this.session, this.dialect, undefined, options);
   }
 
   $with = <TAlias extends string>(alias: TAlias, selection?: Record<string, unknown>) => {

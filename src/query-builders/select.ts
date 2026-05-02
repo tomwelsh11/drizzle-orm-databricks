@@ -11,7 +11,7 @@ import { ViewBaseConfig } from "drizzle-orm/view-common";
 
 import type { DatabricksDialect } from "../dialect";
 import type { DatabricksSession } from "../session";
-import type { DatabricksTable } from "../table";
+import type { DatabricksTable, NamespaceOverride } from "../table";
 
 // Runtime-only drizzle-orm utilities not in type declarations
 const { applyMixins, getTableLikeName, orderSelectedFields } = require("drizzle-orm/utils") as {
@@ -54,7 +54,10 @@ export class DatabricksSelectBuilder<TSelection extends Record<string, unknown> 
     this.distinct = config.distinct;
   }
 
-  from(source: DatabricksTable<any> | Subquery | SQL | View): DatabricksSelectBase<any, any, any> {
+  from(
+    source: DatabricksTable<any> | Subquery | SQL | View,
+    options?: NamespaceOverride,
+  ): DatabricksSelectBase<any, any, any> {
     const isPartialSelect = !!this.fields;
     let fields: Record<string, unknown>;
     if (this.fields) {
@@ -79,6 +82,7 @@ export class DatabricksSelectBuilder<TSelection extends Record<string, unknown> 
       dialect: this.dialect,
       withList: this.withList,
       distinct: this.distinct,
+      namespaceOverride: options,
     });
   }
 }
@@ -106,6 +110,7 @@ export class DatabricksSelectQueryBuilderBase<
     dialect,
     withList,
     distinct,
+    namespaceOverride,
   }: {
     table: Table | Subquery | SQL | View;
     fields: Record<string, unknown>;
@@ -114,6 +119,7 @@ export class DatabricksSelectQueryBuilderBase<
     dialect: DatabricksDialect;
     withList?: Subquery[];
     distinct?: boolean;
+    namespaceOverride?: NamespaceOverride;
   }) {
     super();
     this.config = {
@@ -122,6 +128,7 @@ export class DatabricksSelectQueryBuilderBase<
       fields: { ...fields },
       distinct,
       setOperators: [],
+      namespaceOverride,
     };
     this.isPartialSelect = isPartialSelect;
     this.session = session;

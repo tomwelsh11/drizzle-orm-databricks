@@ -9,7 +9,7 @@ import type { Casing } from "drizzle-orm/utils";
 import { ViewBaseConfig } from "drizzle-orm/view-common";
 
 import { DatabricksColumn } from "./columns/common";
-import { CatalogSymbol, DatabricksTable } from "./table";
+import { CatalogSymbol, DatabricksTable, type NamespaceOverride } from "./table";
 
 // Drizzle internal symbols not typed for external use
 const TableSymbol = (Table as any).Symbol as {
@@ -62,9 +62,9 @@ export class DatabricksDialect {
     });
   }
 
-  qualifyTable(table: Table): SQL {
-    const schema = (table as any)[TableSymbol.Schema] as string | undefined;
-    const catalog = (table as any)[CatalogSymbol] as string | undefined;
+  qualifyTable(table: Table, override?: NamespaceOverride): SQL {
+    const schema = override?.schema ?? ((table as any)[TableSymbol.Schema] as string | undefined);
+    const catalog = override?.catalog ?? ((table as any)[CatalogSymbol] as string | undefined);
     const name = (table as any)[TableSymbol.OriginalName] as string;
     if (catalog && schema) {
       return sql`${sql.identifier(catalog)}.${sql.identifier(schema)}.${sql.identifier(name)}`;
@@ -184,6 +184,7 @@ export class DatabricksDialect {
     offset,
     distinct,
     setOperators,
+    namespaceOverride,
   }: {
     withList?: Subquery[];
     fields: Record<string, unknown>;
@@ -203,6 +204,7 @@ export class DatabricksDialect {
     limit?: number | SQL;
     offset?: number | SQL;
     distinct?: boolean;
+    namespaceOverride?: NamespaceOverride;
     setOperators: Array<{
       type: string;
       isAll: boolean;
@@ -252,7 +254,7 @@ export class DatabricksDialect {
 
     const tableSql = (() => {
       if (is(table, Table)) {
-        const qualified = this.qualifyTable(table as Table);
+        const qualified = this.qualifyTable(table as Table, namespaceOverride);
         if ((table as any)[TableSymbol.OriginalName] !== (table as any)[TableSymbol.Name]) {
           return sql`${qualified} ${sql.identifier((table as any)[TableSymbol.Name])}`;
         }
@@ -394,12 +396,14 @@ export class DatabricksDialect {
     onConflict,
     select,
     withList,
+    namespaceOverride,
   }: {
     table: Table;
     values: Record<string, SQL | Param>[] | SQL;
     onConflict?: SQL;
     select?: boolean;
     withList?: Subquery[];
+    namespaceOverride?: NamespaceOverride;
   }): { sql: SQL; generatedIds: Record<string, unknown>[] } {
     const valuesSqlList: (SQL | SQL[])[] = [];
     const columns: Record<string, Column> = (table as any)[TableSymbol.Columns];
@@ -463,7 +467,7 @@ export class DatabricksDialect {
     const onConflictSql = onConflict ? sql` on duplicate key ${onConflict}` : undefined;
     const withSql = this.buildWithCTE(withList);
 
-    const tableSql = this.qualifyTable(table);
+    const tableSql = this.qualifyTable(table, namespaceOverride);
     return {
       sql: sql`${withSql}insert into ${tableSql} (${insertOrder}) ${valuesSql}${onConflictSql}`,
       generatedIds: generatedIdsResponse,
@@ -477,6 +481,7 @@ export class DatabricksDialect {
     withList,
     limit,
     orderBy,
+    namespaceOverride,
   }: {
     table: Table;
     set: Record<string, unknown>;
@@ -484,13 +489,14 @@ export class DatabricksDialect {
     withList?: Subquery[];
     limit?: number | SQL;
     orderBy?: (SQL | Column)[];
+    namespaceOverride?: NamespaceOverride;
   }): SQL {
     const withSql = this.buildWithCTE(withList);
     const setSql = this.buildUpdateSet(table, set);
     const whereSql = where ? sql` where ${where}` : undefined;
     const orderBySql = this.buildOrderBy(orderBy);
     const limitSql = this.buildLimit(limit);
-    const tableSql = this.qualifyTable(table);
+    const tableSql = this.qualifyTable(table, namespaceOverride);
     return sql`${withSql}update ${tableSql} set ${setSql}${whereSql}${orderBySql}${limitSql}`;
   }
 
@@ -500,18 +506,20 @@ export class DatabricksDialect {
     withList,
     limit,
     orderBy,
+    namespaceOverride,
   }: {
     table: Table;
     where?: SQL;
     withList?: Subquery[];
     limit?: number | SQL;
     orderBy?: (SQL | Column)[];
+    namespaceOverride?: NamespaceOverride;
   }): SQL {
     const withSql = this.buildWithCTE(withList);
     const whereSql = where ? sql` where ${where}` : undefined;
     const orderBySql = this.buildOrderBy(orderBy);
     const limitSql = this.buildLimit(limit);
-    const tableSql = this.qualifyTable(table);
+    const tableSql = this.qualifyTable(table, namespaceOverride);
     return sql`${withSql}delete from ${tableSql}${whereSql}${orderBySql}${limitSql}`;
   }
 }

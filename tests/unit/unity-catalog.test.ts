@@ -230,4 +230,75 @@ describe("Unity Catalog namespace qualification", () => {
       expect(mockClient.recorded[0]!.sql).toBe("select `id` from `my``cat`.`my``sch`.`my``tbl`");
     });
   });
+
+  describe("per-query namespace override", () => {
+    it("SELECT from() with catalog+schema override on plain table", async () => {
+      const { db, mockClient } = createDb();
+      await db.select().from(plainUsers, { catalog: "staging", schema: "raw" });
+      expect(mockClient.recorded[0]!.sql).toBe(
+        "select `id`, `name`, `age` from `staging`.`raw`.`users`",
+      );
+    });
+
+    it("SELECT from() with schema-only override on plain table", async () => {
+      const { db, mockClient } = createDb();
+      await db.select().from(plainUsers, { schema: "raw" });
+      expect(mockClient.recorded[0]!.sql).toBe("select `id`, `name`, `age` from `raw`.`users`");
+    });
+
+    it("SELECT from() override replaces table-level namespace", async () => {
+      const { db, mockClient } = createDb();
+      await db.select().from(catalogSchemaUsers, { catalog: "staging", schema: "raw" });
+      expect(mockClient.recorded[0]!.sql).toBe(
+        "select `id`, `name`, `age` from `staging`.`raw`.`users`",
+      );
+    });
+
+    it("INSERT with namespace override", async () => {
+      const { db, mockClient } = createDb();
+      await db
+        .insert(plainUsers, { catalog: "staging", schema: "raw" })
+        .values({ id: "u1", name: "Alice", age: 30 });
+      expect(mockClient.recorded[0]!.sql).toBe(
+        "insert into `staging`.`raw`.`users` (`id`, `name`, `age`) values (?, ?, ?)",
+      );
+    });
+
+    it("UPDATE with namespace override", async () => {
+      const { db, mockClient } = createDb();
+      await db
+        .update(plainUsers, { catalog: "staging", schema: "raw" })
+        .set({ name: "Bob" })
+        .where(eq(plainUsers.id, "u1"));
+      expect(mockClient.recorded[0]!.sql).toBe(
+        "update `staging`.`raw`.`users` set `name` = ? where `users`.`id` = ?",
+      );
+    });
+
+    it("DELETE with namespace override", async () => {
+      const { db, mockClient } = createDb();
+      await db
+        .delete(plainUsers, { catalog: "staging", schema: "raw" })
+        .where(eq(plainUsers.id, "u1"));
+      expect(mockClient.recorded[0]!.sql).toBe(
+        "delete from `staging`.`raw`.`users` where `users`.`id` = ?",
+      );
+    });
+
+    it("override does not affect joined tables", async () => {
+      const posts = databricksTable("posts", {
+        id: int("id"),
+        userId: string("user_id"),
+      });
+      const { db, mockClient } = createDb();
+      await db
+        .select()
+        .from(plainUsers, { catalog: "prod", schema: "analytics" })
+        .innerJoin(posts, eq(plainUsers.id, posts.userId));
+      const s = mockClient.recorded[0]!.sql;
+      expect(s).toContain("from `prod`.`analytics`.`users`");
+      expect(s).toContain("inner join `posts`");
+      expect(s).not.toContain("inner join `prod`");
+    });
+  });
 });

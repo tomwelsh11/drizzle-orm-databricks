@@ -8,7 +8,7 @@ import type { Column } from "drizzle-orm/column";
 
 import type { DatabricksDialect } from "../dialect";
 import type { DatabricksSession } from "../session";
-import type { DatabricksTable } from "../table";
+import type { DatabricksTable, NamespaceOverride } from "../table";
 
 const TableSymbol = (Table as any).Symbol as { Columns: symbol };
 
@@ -21,6 +21,7 @@ export class DatabricksDeleteBase<TTable extends DatabricksTable<any>> extends Q
     withList?: Subquery[];
     orderBy?: (SQL | Column)[];
     limit?: number | SQL;
+    namespaceOverride?: NamespaceOverride;
   };
 
   constructor(
@@ -28,9 +29,10 @@ export class DatabricksDeleteBase<TTable extends DatabricksTable<any>> extends Q
     private session: DatabricksSession,
     private dialect: DatabricksDialect,
     withList?: Subquery[],
+    namespaceOverride?: NamespaceOverride,
   ) {
     super();
-    this.config = { table, withList };
+    this.config = { table, withList, namespaceOverride };
   }
 
   where(where: SQL | undefined) {

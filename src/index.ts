@@ -12,7 +12,7 @@ export type {
 } from "./types";
 
 export { databricksTable, databricksSchema, databricksCatalog, DatabricksTable } from "./table";
-export type { DatabricksCatalog } from "./table";
+export type { DatabricksCatalog, NamespaceOverride } from "./table";
 
 export {
   DatabricksSelectBuilder,

@@ -8,6 +8,11 @@ const ExtraConfigColumnsSymbol = Symbol.for("drizzle:ExtraConfigColumns");
 
 export const CatalogSymbol = Symbol.for("databricks:Catalog");
 
+export interface NamespaceOverride {
+  catalog?: string;
+  schema?: string;
+}
+
 export type DatabricksTableConfig = TableConfig<DatabricksColumn>;
 
 export class DatabricksTable<T extends TableConfig = TableConfig> extends Table<T> {
