@@ -21,6 +21,7 @@ export {
   DatabricksUpdateBuilder,
   DatabricksUpdateBase,
   DatabricksDeleteBase,
+  DatabricksQueryBuilder,
   union,
   unionAll,
   intersect,

@@ -376,11 +376,13 @@ export class DatabricksDialect {
     values: valuesOrSelect,
     onConflict,
     select,
+    withList,
   }: {
     table: Table;
     values: Record<string, SQL | Param>[] | SQL;
     onConflict?: SQL;
     select?: boolean;
+    withList?: Subquery[];
   }): { sql: SQL; generatedIds: Record<string, unknown>[] } {
     const valuesSqlList: (SQL | SQL[])[] = [];
     const columns: Record<string, Column> = (table as any)[TableSymbol.Columns];
@@ -442,9 +444,10 @@ export class DatabricksDialect {
 
     const valuesSql = sql.join(valuesSqlList);
     const onConflictSql = onConflict ? sql` on duplicate key ${onConflict}` : undefined;
+    const withSql = this.buildWithCTE(withList);
 
     return {
-      sql: sql`insert into ${table} (${insertOrder}) ${valuesSql}${onConflictSql}`,
+      sql: sql`${withSql}insert into ${table} (${insertOrder}) ${valuesSql}${onConflictSql}`,
       generatedIds: generatedIdsResponse,
     };
   }
