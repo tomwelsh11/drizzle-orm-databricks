@@ -83,10 +83,11 @@ export class Pool<TItem> {
 
     while (this.availableItems.length > 0) {
       const candidate = this.availableItems.pop()!;
+      this.inUseItems.add(candidate);
       if (await this.hooks.validate(candidate)) {
-        this.inUseItems.add(candidate);
         return candidate;
       }
+      this.inUseItems.delete(candidate);
       await this.safeDestroy(candidate);
     }
 

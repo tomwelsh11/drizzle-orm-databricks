@@ -271,6 +271,43 @@ describe("Pool", () => {
     ).toThrow(PoolError);
   });
 
+  it("does not exceed maxSize under concurrent acquire with slow validate", async () => {
+    const f = makeFactory({
+      validate: async (item) => {
+        await new Promise((r) => setTimeout(r, 10));
+        return item.valid;
+      },
+    });
+    const pool = new Pool({
+      create: f.create,
+      destroy: f.destroy,
+      validate: f.validate,
+      maxSize: 1,
+    });
+
+    const a = await pool.acquire();
+    await pool.release(a);
+    expect(pool.available).toBe(1);
+
+    // Fire two concurrent acquires. With the fix, the second sees size=1
+    // during the first's slow validate and queues as a waiter instead of
+    // creating a new item that would exceed maxSize.
+    const p1 = pool.acquire();
+    const p2 = pool.acquire();
+
+    const r1 = await p1;
+    expect(pool.pending).toBe(1);
+    expect(f.create).toHaveBeenCalledTimes(1);
+
+    await pool.release(r1);
+    const r2 = await p2;
+    expect(r2).toBe(r1);
+    expect(f.create).toHaveBeenCalledTimes(1);
+    expect(pool.size).toBe(1);
+
+    await pool.release(r2);
+  });
+
   it("does not exceed maxSize when releasing valid items (release bug fix)", async () => {
     // The reference implementation destroys valid items at release time when
     // size == maxSize, even though they're already counted in inUseItems.
