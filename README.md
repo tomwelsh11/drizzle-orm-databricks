@@ -253,15 +253,49 @@ DATABRICKS_SCHEMA=default
 
 Note: `DATABRICKS_HOST` is the hostname only — no `https://` prefix.
 
-## Limitations
+## Compatibility
+
+| Dependency        | Version  |
+| ----------------- | -------- |
+| `drizzle-orm`     | `>=0.36` |
+| `@databricks/sql` | `>=1.8`  |
+| Node.js           | `>=18`   |
+
+Tested on Node 18, 20, 22, and 24.
+
+### What works
+
+- **Query builders** — `select`, `selectDistinct`, `insert` (single & batch), `update`, `delete`
+- **All join types** — `innerJoin`, `leftJoin`, `rightJoin`, `fullJoin` with WHERE, ORDER BY, LIMIT
+- **Set operators** — `union`, `unionAll`, `intersect`, `intersectAll`, `except`, `exceptAll`
+- **SQL features** — aggregates (SUM/AVG/MIN/MAX/COUNT), GROUP BY, HAVING, subqueries, CASE WHEN, LIMIT/OFFSET
+- **Authentication** — PAT, OAuth M2M (service principal), bring-your-own `DBSQLClient`
+- **Column types** — all 16 Spark SQL types (STRING through VARIANT)
+- **Schema-qualified tables** — `databricksSchema("name").table(...)`
+- **Migrations** — `migrate()` with Delta table tracking
+- **Raw SQL** — `db.execute(sql`...`)`, `sql.raw()`, `sql.identifier()`
+- **Session management** — lazy connection, automatic stale session retry, clean shutdown
+
+### Limitations
 
 - **No `RETURNING` clause.** Databricks does not support RETURNING on INSERT/UPDATE/DELETE. Generate primary keys client-side (UUIDs) and SELECT after insert.
-- **No relational queries yet.** The `db.query` API with `with` relations is not yet supported. Use query builders or `db.execute()` with joins.
+- **No relational queries.** The `db.query` API with `with` relations is not supported. Use query builders or `db.execute()` with joins.
 - **No multi-statement transactions.** `db.session.transaction()` throws `DatabricksUnsupportedError`. Databricks provides single-statement atomicity only.
 - **No drizzle-kit support.** drizzle-kit does not understand Spark SQL. Write DDL manually.
 - **Foreign keys are informational only.** Databricks accepts FK syntax but does not enforce referential integrity.
 - **Unique constraints are not enforced.** Databricks accepts UNIQUE syntax but does not enforce uniqueness.
 - **No `AUTO_INCREMENT`.** Databricks `IDENTITY` columns disable concurrent writes — use UUIDs.
+
+## Roadmap
+
+- [ ] Relational queries (`db.query` API with `with` relations)
+- [ ] drizzle-kit integration (schema push, introspection, migration generation)
+- [ ] `RETURNING` emulation (SELECT-after-write for single-row inserts)
+- [ ] Prepared statements
+- [ ] Connection pooling and multi-session support
+- [ ] `MERGE INTO` (Databricks upsert)
+- [ ] Databricks `IDENTITY` column support
+- [ ] `ARRAY`, `MAP`, and `STRUCT` column types
 
 ## Testing
 
