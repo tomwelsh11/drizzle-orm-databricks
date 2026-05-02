@@ -47,7 +47,7 @@ await db.$close();
 
 ## Configuration
 
-### Option 1: connect from credentials
+### Option 1: personal access token (PAT)
 
 ```ts
 const db = drizzle({
@@ -59,7 +59,22 @@ const db = drizzle({
 });
 ```
 
-### Option 2: bring your own DBSQLClient
+### Option 2: service principal (OAuth M2M)
+
+```ts
+const db = drizzle({
+  host: 'adb-1234567890123456.7.azuredatabricks.net',
+  path: '/sql/1.0/warehouses/abc123',
+  clientId: process.env.DATABRICKS_CLIENT_ID!,
+  clientSecret: process.env.DATABRICKS_CLIENT_SECRET!,
+  catalog: 'main',
+  schema: 'default',
+});
+```
+
+Uses Databricks OAuth machine-to-machine flow. Register a service principal in your Databricks workspace and grant it access to the SQL warehouse.
+
+### Option 3: bring your own DBSQLClient
 
 ```ts
 import { DBSQLClient } from '@databricks/sql';

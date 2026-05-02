@@ -6,6 +6,8 @@ export { DatabricksSession, DatabricksPreparedQuery } from './session';
 export type {
   DatabricksConfig,
   DatabricksConnectionConfig,
+  DatabricksTokenConnectionConfig,
+  DatabricksOAuthConnectionConfig,
   DatabricksClientConfig,
 } from './types';
 

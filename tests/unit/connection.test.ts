@@ -138,4 +138,37 @@ describe('SessionManager', () => {
     expect(mockClient.sessions[0]!.closed).toBe(true);
     expect(mockClient.closed).toBe(false);
   });
+
+  it('connects with OAuth M2M credentials (service principal)', async () => {
+    const mockClient = new MockDBSQLClient();
+    const connectSpy = vi.spyOn(mockClient, 'connect');
+
+    vi.doMock('@databricks/sql', () => ({
+      DBSQLClient: vi.fn(() => mockClient),
+    }));
+
+    const { SessionManager } = await import('../../src/connection');
+    const manager = new SessionManager({
+      host: 'h.databricks.com',
+      path: '/sql/1.0/warehouses/x',
+      clientId: 'sp-client-id',
+      clientSecret: 'sp-client-secret',
+      catalog: 'cat',
+      schema: 'sch',
+    });
+
+    await manager.getSession();
+
+    expect(connectSpy).toHaveBeenCalledWith({
+      host: 'h.databricks.com',
+      path: '/sql/1.0/warehouses/x',
+      authType: 'databricks-oauth',
+      oauthClientId: 'sp-client-id',
+      oauthClientSecret: 'sp-client-secret',
+    });
+    expect(mockClient.openSessionCalls[0]).toEqual({
+      initialCatalog: 'cat',
+      initialSchema: 'sch',
+    });
+  });
 });

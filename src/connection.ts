@@ -1,7 +1,8 @@
 import { DBSQLClient } from '@databricks/sql';
+import type { ConnectionOptions } from '@databricks/sql/dist/contracts/IDBSQLClient';
 import type IDBSQLSession from '@databricks/sql/dist/contracts/IDBSQLSession';
 import { DatabricksConnectionError } from './errors';
-import { isClientConfig, type DatabricksConfig } from './types';
+import { isClientConfig, isOAuthConfig, type DatabricksConfig, type DatabricksConnectionConfig } from './types';
 
 interface ResolvedSessionOptions {
   initialCatalog?: string;
@@ -14,7 +15,7 @@ export class SessionManager {
   private connecting: Promise<void> | undefined;
   private readonly ownsClient: boolean;
   private readonly sessionOptions: ResolvedSessionOptions;
-  private readonly connectArgs: { host: string; path: string; token: string } | undefined;
+  private readonly connectArgs: ConnectionOptions | undefined;
 
   constructor(config: DatabricksConfig) {
     this.sessionOptions = {
@@ -28,7 +29,7 @@ export class SessionManager {
       this.connectArgs = undefined;
     } else {
       this.ownsClient = true;
-      this.connectArgs = { host: config.host, path: config.path, token: config.token };
+      this.connectArgs = buildConnectArgs(config);
     }
   }
 
@@ -85,7 +86,7 @@ export class SessionManager {
         this.client = client;
       } catch (err) {
         throw new DatabricksConnectionError(
-          'Failed to connect to Databricks SQL warehouse. Check host, path, and token.',
+          'Failed to connect to Databricks SQL warehouse. Check host, path, and credentials.',
           err,
         );
       } finally {
@@ -118,6 +119,19 @@ export class SessionManager {
     }
     return true;
   }
+}
+
+function buildConnectArgs(config: DatabricksConnectionConfig): ConnectionOptions {
+  if (isOAuthConfig(config)) {
+    return {
+      host: config.host,
+      path: config.path,
+      authType: 'databricks-oauth',
+      oauthClientId: config.clientId,
+      oauthClientSecret: config.clientSecret,
+    };
+  }
+  return { host: config.host, path: config.path, token: config.token };
 }
 
 function isStaleSessionError(err: unknown): boolean {

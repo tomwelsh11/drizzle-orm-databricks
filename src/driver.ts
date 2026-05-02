@@ -6,7 +6,7 @@ import type { SQL, SQLWrapper } from 'drizzle-orm/sql';
 import { SessionManager } from './connection';
 import { DatabricksDialect } from './dialect';
 import { DatabricksSession, type DatabricksRawQueryResult } from './session';
-import type { DatabricksClientConfig, DatabricksConfig, DatabricksConnectionConfig } from './types';
+import type { DatabricksClientConfig, DatabricksConfig, DatabricksConnectionConfig, DatabricksOAuthConnectionConfig, DatabricksTokenConnectionConfig } from './types';
 
 export class DatabricksDatabase<
   TSchema extends Record<string, unknown> = Record<string, never>,
@@ -42,7 +42,11 @@ export class DatabricksDatabase<
 }
 
 export function drizzle<TSchema extends Record<string, unknown> = Record<string, never>>(
-  config: DatabricksConnectionConfig,
+  config: DatabricksTokenConnectionConfig,
+  drizzleConfig?: DrizzleConfig<TSchema>,
+): DatabricksDatabase<TSchema>;
+export function drizzle<TSchema extends Record<string, unknown> = Record<string, never>>(
+  config: DatabricksOAuthConnectionConfig,
   drizzleConfig?: DrizzleConfig<TSchema>,
 ): DatabricksDatabase<TSchema>;
 export function drizzle<TSchema extends Record<string, unknown> = Record<string, never>>(
