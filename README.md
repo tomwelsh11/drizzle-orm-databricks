@@ -21,9 +21,8 @@ import {
   timestamp,
   boolean,
 } from "drizzle-orm-adapter-databricks";
-import { sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
-// Define tables with Databricks-native column types
 const users = databricksTable("users", {
   id: string("id").primaryKey(),
   email: string("email").notNull(),
@@ -32,15 +31,11 @@ const users = databricksTable("users", {
   createdAt: timestamp("created_at").notNull(),
 });
 
-// Connect with PAT or service principal
 const db = drizzle({
   host: process.env.DATABRICKS_HOST!,
   path: process.env.DATABRICKS_SQL_PATH!,
   token: process.env.DATABRICKS_TOKEN!,
 });
-
-// Query builders — type-safe select, insert, update, delete
-import { eq } from "drizzle-orm";
 
 const rows = await db.select().from(users).where(eq(users.active, true));
 
@@ -126,7 +121,7 @@ import {
   variant,
 } from "drizzle-orm-adapter-databricks";
 
-export const events = databricksTable("events", {
+const events = databricksTable("events", {
   id: string("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   count: bigint("count").notNull(),
@@ -158,41 +153,125 @@ export const events = databricksTable("events", {
 | `binary()`                      | `BINARY`        | `Uint8Array`     |
 | `variant()`                     | `VARIANT`       | `unknown` (JSON) |
 
-## Schema-qualified tables
+All column builders accept an optional column name: `string("col_name")`. If omitted, the property key is used.
+
+Column modifiers: `.primaryKey()`, `.notNull()`, `.default(value)`, `.$default(fn)`.
+
+## Unity Catalog namespaces
+
+Databricks Unity Catalog organises data in a 3-tier namespace: `catalog.schema.table`. The adapter supports all levels of qualification.
+
+### Schema-qualified tables
 
 ```ts
-import { databricksSchema, string } from "drizzle-orm-adapter-databricks";
+import { databricksSchema, string, int } from "drizzle-orm-adapter-databricks";
 
 const analytics = databricksSchema("analytics");
 
 const events = analytics.table("events", {
   id: string("id").primaryKey(),
   name: string("name").notNull(),
+  count: int("count"),
 });
+
+// SQL: SELECT `id`, `name`, `count` FROM `analytics`.`events`
+await db.select().from(events);
 ```
+
+### Fully qualified tables (catalog.schema.table)
+
+```ts
+import { databricksCatalog, string, int } from "drizzle-orm-adapter-databricks";
+
+const prod = databricksCatalog("prod");
+
+// catalog + schema + table
+const users = prod.schema("analytics").table("users", {
+  id: string("id"),
+  name: string("name"),
+  age: int("age"),
+});
+
+// SQL: SELECT `id`, `name`, `age` FROM `prod`.`analytics`.`users`
+await db.select().from(users);
+
+// catalog + table (no schema)
+const logs = prod.table("logs", {
+  id: string("id"),
+  message: string("message"),
+});
+
+// SQL: SELECT `id`, `message` FROM `prod`.`logs`
+await db.select().from(logs);
+```
+
+### Per-query namespace overrides
+
+Override the catalog and/or schema at query time without changing the table definition. Useful for routing queries to staging/production catalogs dynamically:
+
+```ts
+import { databricksTable, string, int } from "drizzle-orm-adapter-databricks";
+
+const users = databricksTable("users", {
+  id: string("id"),
+  name: string("name"),
+  age: int("age"),
+});
+
+// Override on SELECT
+await db.select().from(users, { catalog: "staging", schema: "raw" });
+// SQL: SELECT ... FROM `staging`.`raw`.`users`
+
+// Override on INSERT
+await db
+  .insert(users, { catalog: "staging", schema: "raw" })
+  .values({ id: "u1", name: "Alice", age: 30 });
+
+// Override on UPDATE
+await db
+  .update(users, { catalog: "staging", schema: "raw" })
+  .set({ name: "Bob" })
+  .where(eq(users.id, "u1"));
+
+// Override on DELETE
+await db.delete(users, { catalog: "staging", schema: "raw" }).where(eq(users.id, "u1"));
+```
+
+Overrides apply only to the primary table — joined tables keep their own namespace.
 
 ## Query builders
 
-Full Drizzle query builder support with type-safe select, insert, update, and delete:
+### Select
 
 ```ts
-import { eq, and, gt, desc, sql } from "drizzle-orm";
+import { eq, gt, desc, sql } from "drizzle-orm";
 
-// Select with where, order, limit, offset
-const activeUsers = await db
-  .select()
-  .from(users)
-  .where(eq(users.active, true))
-  .orderBy(desc(users.createdAt))
-  .limit(10);
+// Select all columns
+const allUsers = await db.select().from(users);
 
-// Partial select — only the columns you need
+// Partial select
 const names = await db
   .select({ id: users.id, email: users.email })
   .from(users)
   .where(gt(users.loginCount, BigInt(10)));
 
-// Insert single or multiple rows
+// Where, order, limit, offset
+const page = await db
+  .select()
+  .from(users)
+  .where(eq(users.active, true))
+  .orderBy(desc(users.createdAt))
+  .limit(10)
+  .offset(20);
+
+// Select distinct
+const uniqueEmails = await db.selectDistinct({ email: users.email }).from(users);
+```
+
+### Insert
+
+```ts
+// Single row
 await db.insert(users).values({
   id: "u1",
   email: "a@b.com",
@@ -200,29 +279,179 @@ await db.insert(users).values({
   active: true,
   createdAt: new Date(),
 });
+
+// Batch insert
 await db.insert(users).values([
   { id: "u2", email: "b@c.com", loginCount: BigInt(0), active: true, createdAt: new Date() },
   { id: "u3", email: "c@d.com", loginCount: BigInt(0), active: false, createdAt: new Date() },
 ]);
 
-// Update with where
-await db.update(users).set({ active: false }).where(eq(users.id, "u1"));
-
-// Delete with where
-await db.delete(users).where(eq(users.id, "u1"));
-
-// Joins
-const result = await db
-  .select({ userName: users.email, eventName: events.name })
-  .from(users)
-  .innerJoin(events, eq(users.id, events.id));
-
-// Select distinct
-const uniqueNames = await db.selectDistinct({ email: users.email }).from(users);
-
-// You can still use db.execute() with the sql template tag for raw queries
-const raw = await db.execute(sql`SELECT COUNT(*) as cnt FROM ${users}`);
+// INSERT INTO ... SELECT
+await db.insert(archive).select(db.select().from(users).where(eq(users.active, false)));
 ```
+
+### Update
+
+```ts
+await db.update(users).set({ active: false }).where(eq(users.id, "u1"));
+```
+
+### Delete
+
+```ts
+await db.delete(users).where(eq(users.id, "u1"));
+```
+
+### Joins
+
+All standard join types are supported:
+
+```ts
+const result = await db
+  .select({ userName: users.name, eventName: events.name })
+  .from(users)
+  .innerJoin(events, eq(users.id, events.userId));
+
+// Also available: leftJoin, rightJoin, fullJoin, crossJoin
+await db.select().from(users).leftJoin(events, eq(users.id, events.userId));
+await db.select().from(users).crossJoin(events);
+```
+
+### Set operators
+
+```ts
+import {
+  union,
+  unionAll,
+  intersect,
+  intersectAll,
+  except,
+  exceptAll,
+} from "drizzle-orm-adapter-databricks";
+
+const combined = await union(
+  db.select({ id: users.id }).from(users),
+  db.select({ id: archivedUsers.id }).from(archivedUsers),
+);
+```
+
+### Common table expressions (CTEs)
+
+Use `$with` and `with` for CTE-based queries on SELECT, INSERT, UPDATE, and DELETE:
+
+```ts
+// CTE on SELECT
+const adults = db.$with("adults").as(db.select().from(users).where(gt(users.age, 18)));
+
+const result = await db.with(adults).select().from(adults);
+
+// CTE on INSERT...SELECT
+await db.with(adults).insert(archive).select(db.select().from(adults));
+
+// CTE on UPDATE
+await db.with(adults).update(users).set({ active: true }).where(eq(users.id, "u1"));
+
+// CTE on DELETE
+await db.with(adults).delete(users).where(eq(users.id, "u1"));
+```
+
+### Aggregates and SQL expressions
+
+```ts
+import { sql, count, sum, avg, min, max } from "drizzle-orm";
+
+// Aggregates with GROUP BY and HAVING
+const stats = await db
+  .select({
+    active: users.active,
+    total: count(),
+    avgAge: avg(users.age),
+  })
+  .from(users)
+  .groupBy(users.active)
+  .having(sql`count(*) > 5`);
+
+// Subqueries
+const subquery = db
+  .select({ id: users.id })
+  .from(users)
+  .where(eq(users.active, true))
+  .as("active_users");
+
+const result = await db.select().from(subquery);
+
+// CASE WHEN
+const labeled = await db
+  .select({
+    id: users.id,
+    tier: sql`CASE WHEN ${users.loginCount} > 100 THEN 'power' ELSE 'regular' END`,
+  })
+  .from(users);
+```
+
+### Raw SQL
+
+```ts
+// Execute arbitrary SQL
+const raw = await db.execute(sql`SELECT COUNT(*) as cnt FROM ${users}`);
+
+// sql.raw() for unparameterised fragments
+await db.execute(sql.raw("SHOW TABLES"));
+
+// sql.identifier() for safe identifier quoting
+await db.execute(sql`SELECT * FROM ${sql.identifier("my_table")}`);
+```
+
+## Connection pooling
+
+For workloads with concurrent queries, enable session pooling to manage multiple `IDBSQLSession` instances backed by a single `DBSQLClient`:
+
+```ts
+const db = drizzle({
+  host: process.env.DATABRICKS_HOST!,
+  path: process.env.DATABRICKS_SQL_PATH!,
+  token: process.env.DATABRICKS_TOKEN!,
+  pool: {
+    max: 5, // max concurrent sessions (default: 10)
+    acquireTimeoutMs: 30_000, // timeout waiting for a session (default: 30s)
+    sessionMaxAgeMs: 1800000, // recycle sessions after 30 min (default)
+  },
+});
+
+// Queries automatically acquire and release sessions from the pool
+await Promise.all([db.select().from(users), db.select().from(events), db.select().from(logs)]);
+
+// Drains all sessions and closes the client
+await db.$close();
+```
+
+Sessions are created lazily up to `max`. When all sessions are in use, further requests queue until one is released or `acquireTimeoutMs` elapses. Stale sessions (closed, expired, or older than `sessionMaxAgeMs`) are automatically evicted and replaced.
+
+Without the `pool` option, the adapter uses a single session with automatic stale-session retry (the default for low-concurrency workloads).
+
+## Error handling
+
+Driver errors are wrapped in `DrizzleQueryError` (from `drizzle-orm`) with the SQL string, parameters, and original error attached:
+
+```ts
+try {
+  await db.execute(sql`SELECT * FROM nonexistent_table`);
+} catch (err) {
+  if (err instanceof DrizzleQueryError) {
+    console.log(err.sql); // the SQL that failed
+    console.log(err.params); // bound parameters
+    console.log(err.cause); // original @databricks/sql error
+  }
+}
+```
+
+Adapter-specific errors:
+
+| Error class                  | When                                                |
+| ---------------------------- | --------------------------------------------------- |
+| `DatabricksConnectionError`  | Failed to connect or open a session                 |
+| `DatabricksUnsupportedError` | Called an unsupported feature (transactions, etc.)  |
+| `PoolError`                  | Pool drained, acquire timeout, or invalid pool size |
 
 ## Migrations
 
@@ -232,7 +461,19 @@ import { migrate } from "drizzle-orm-adapter-databricks/migrator";
 await migrate(db, { migrationsFolder: "./drizzle" });
 ```
 
-The migrator tracks applied migrations in a `__drizzle_migrations` Delta table. Write migration SQL in Spark SQL dialect — drizzle-kit does not yet support Databricks.
+The migrator tracks applied migrations in a `__drizzle_migrations` Delta table (customisable via `migrationsTable`). Write migration SQL in Spark SQL dialect — drizzle-kit does not yet generate Databricks-compatible DDL.
+
+Example migration file (`drizzle/0001_create_users.sql`):
+
+```sql
+CREATE TABLE IF NOT EXISTS users (
+  id STRING NOT NULL,
+  email STRING NOT NULL,
+  login_count BIGINT NOT NULL,
+  active BOOLEAN NOT NULL,
+  created_at TIMESTAMP NOT NULL
+) USING DELTA;
+```
 
 ## Environment variables
 
@@ -251,7 +492,7 @@ DATABRICKS_CATALOG=main
 DATABRICKS_SCHEMA=default
 ```
 
-Note: `DATABRICKS_HOST` is the hostname only — no `https://` prefix.
+`DATABRICKS_HOST` is the hostname only — no `https://` prefix.
 
 ## Compatibility
 
@@ -261,53 +502,25 @@ Note: `DATABRICKS_HOST` is the hostname only — no `https://` prefix.
 | `@databricks/sql` | `>=1.8`  |
 | Node.js           | `>=22`   |
 
-Tested on Node 22 and 24.
+Tested on Node 22 and 24. Ships both ESM and CJS with full TypeScript declarations.
 
-### What works
+## Limitations
 
-- **Query builders** — `select`, `selectDistinct`, `insert` (single & batch), `update`, `delete`
-- **All join types** — `innerJoin`, `leftJoin`, `rightJoin`, `fullJoin` with WHERE, ORDER BY, LIMIT
-- **Set operators** — `union`, `unionAll`, `intersect`, `intersectAll`, `except`, `exceptAll`
-- **SQL features** — aggregates (SUM/AVG/MIN/MAX/COUNT), GROUP BY, HAVING, subqueries, CASE WHEN, LIMIT/OFFSET
-- **Authentication** — PAT, OAuth M2M (service principal), bring-your-own `DBSQLClient`
-- **Column types** — all 16 Spark SQL types (STRING through VARIANT)
-- **Schema-qualified tables** — `databricksSchema("name").table(...)`
-- **INSERT INTO ... SELECT** — compose inserts from subqueries
-- **WITH (CTEs) on DML** — use CTEs with INSERT, UPDATE, DELETE
-- **CROSS JOIN** — `crossJoin()` support
-- **DrizzleQueryError** — wraps driver errors with SQL string, params, and stack traces
-- **Migrations** — `migrate()` with Delta table tracking
-- **Raw SQL** — `db.execute(sql`...`)`, `sql.raw()`, `sql.identifier()`
-- **Session management** — lazy connection, automatic stale session retry, clean shutdown
-
-### Limitations
-
-- **No `RETURNING` clause.** Databricks does not support RETURNING on INSERT/UPDATE/DELETE. Generate primary keys client-side (UUIDs) and SELECT after insert.
+- **No `RETURNING` clause.** Databricks does not support RETURNING on INSERT/UPDATE/DELETE. Generate primary keys client-side (UUIDs) and SELECT after insert if needed.
 - **No relational queries.** The `db.query` API with `with` relations is not supported. Use query builders or `db.execute()` with joins.
-- **No multi-statement transactions.** `db.session.transaction()` throws `DatabricksUnsupportedError`. Databricks provides single-statement atomicity only.
-- **No drizzle-kit support.** drizzle-kit does not understand Spark SQL. Write DDL manually.
+- **No multi-statement transactions.** Databricks provides single-statement atomicity only. Calling `db.session.transaction()` throws `DatabricksUnsupportedError`.
+- **No drizzle-kit support.** drizzle-kit does not understand Spark SQL. Write DDL manually and use the built-in migrator.
 - **Foreign keys are informational only.** Databricks accepts FK syntax but does not enforce referential integrity.
 - **Unique constraints are not enforced.** Databricks accepts UNIQUE syntax but does not enforce uniqueness.
 - **No `AUTO_INCREMENT`.** Databricks `IDENTITY` columns disable concurrent writes — use UUIDs.
+- **CTE parameter binding.** Ordinal parameter binding across CTE + DML boundaries can misalign on Databricks. Use `sql.raw()` for conditions inside CTEs on UPDATE/DELETE as a workaround.
 
 ## Roadmap
 
-### Shipped
-
-- [x] `INSERT INTO ... SELECT` — compose inserts from subqueries
-- [x] `WITH` (CTEs) on DML — use CTEs with INSERT, UPDATE, DELETE
-- [x] `CROSS JOIN` support
-- [x] `DrizzleQueryError` wrapper — surface SQL string, params, and stack traces on driver errors
-
-### In progress
-
-- [ ] Unity Catalog 3-tier namespace — `databricksCatalog("cat").schema("sch").table(...)` and per-query overrides (#7)
-- [ ] Connection pooling and multi-session support (#6)
-
 ### Near-term
 
-- [ ] `bigint`/`number` modes for `decimal` columns (available since drizzle-orm 0.41.0)
-- [ ] CTE parameter binding fix — ordinal params across CTE + DML boundaries on Databricks
+- [ ] `bigint`/`number` modes for `decimal` columns
+- [ ] CTE parameter binding fix at the dialect level
 
 ### Medium-term
 
@@ -322,7 +535,7 @@ Tested on Node 22 and 24.
 - [ ] `ARRAY`, `MAP`, and `STRUCT` column types
 - [ ] Databricks `IDENTITY` column support
 
-## Testing
+## Development
 
 ```bash
 pnpm check         # format (oxfmt) + lint (oxlint)
