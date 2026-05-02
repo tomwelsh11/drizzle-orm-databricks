@@ -79,9 +79,10 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // 4 matching: u1×p1, u1×p2, u2×p3, u3×p4 (u4 and p5 excluded)
     expect(rows).toHaveLength(4);
     for (const row of rows) {
-      expect(row.users).not.toBeNull();
-      expect(row.posts).not.toBeNull();
-      expect(row.users.id).toBe(row.posts.userId);
+      const r = row as Record<string, any>;
+      expect(r[usersName]).not.toBeNull();
+      expect(r[postsName]).not.toBeNull();
+      expect(r[usersName].id).toBe(r[postsName].userId);
     }
   });
 
@@ -113,14 +114,14 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // u1 (×2), u2, u3, u4 (with null) = 5 rows
     expect(rows).toHaveLength(5);
 
-    const danRows = rows.filter((r) => r.users.id === 'u4');
+    const danRows = rows.filter((r) => (r as Record<string, any>)[usersName].id === 'u4');
     expect(danRows).toHaveLength(1);
-    expect(danRows[0]!.posts).toBeNull();
+    expect((danRows[0] as Record<string, any>)[postsName]).toBeNull();
 
-    const aliceRows = rows.filter((r) => r.users.id === 'u1');
+    const aliceRows = rows.filter((r) => (r as Record<string, any>)[usersName].id === 'u1');
     expect(aliceRows).toHaveLength(2);
     for (const row of aliceRows) {
-      expect(row.posts).not.toBeNull();
+      expect((row as Record<string, any>)[postsName]).not.toBeNull();
     }
   });
 
@@ -130,7 +131,7 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
       .from(users)
       .leftJoin(posts, eq(users.id, posts.userId));
 
-    const distinctUserIds = new Set(rows.map((r) => r.users.id));
+    const distinctUserIds = new Set(rows.map((r) => (r as Record<string, any>)[usersName].id));
     expect(distinctUserIds.size).toBe(4);
     expect(distinctUserIds).toEqual(new Set(['u1', 'u2', 'u3', 'u4']));
   });
@@ -144,11 +145,11 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // All 5 posts appear; the orphan p5 has null users
     expect(rows).toHaveLength(5);
 
-    const orphan = rows.find((r) => r.posts?.id === 'p5');
+    const orphan = rows.find((r) => (r as Record<string, any>)[postsName]?.id === 'p5');
     expect(orphan).toBeDefined();
-    expect(orphan!.users).toBeNull();
+    expect((orphan as Record<string, any>)[usersName]).toBeNull();
 
-    const matched = rows.filter((r) => r.users !== null);
+    const matched = rows.filter((r) => (r as Record<string, any>)[usersName] !== null);
     expect(matched).toHaveLength(4);
   });
 
@@ -161,13 +162,13 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // 4 matched + u4 (no posts) + p5 (no user) = 6 rows
     expect(rows).toHaveLength(6);
 
-    const userOnly = rows.find((r) => r.users?.id === 'u4');
+    const userOnly = rows.find((r) => (r as Record<string, any>)[usersName]?.id === 'u4');
     expect(userOnly).toBeDefined();
-    expect(userOnly!.posts).toBeNull();
+    expect((userOnly as Record<string, any>)[postsName]).toBeNull();
 
-    const postOnly = rows.find((r) => r.posts?.id === 'p5');
+    const postOnly = rows.find((r) => (r as Record<string, any>)[postsName]?.id === 'p5');
     expect(postOnly).toBeDefined();
-    expect(postOnly!.users).toBeNull();
+    expect((postOnly as Record<string, any>)[usersName]).toBeNull();
   });
 
   it('JOIN with WHERE on left table filters left-side rows', async () => {
@@ -180,7 +181,7 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // Only Alice (30) and Carol (40) qualify; Alice has 2 posts, Carol has 1 = 3 rows
     expect(rows).toHaveLength(3);
     for (const row of rows) {
-      expect(row.users.age).toBeGreaterThan(28);
+      expect((row as Record<string, any>)[usersName].age).toBeGreaterThan(28);
     }
   });
 
@@ -194,7 +195,7 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // p1 (50), p3 (20), p4 (100) — 3 posts above threshold and matching a user
     expect(rows).toHaveLength(3);
     for (const row of rows) {
-      expect(row.posts.likes).toBeGreaterThan(10);
+      expect((row as Record<string, any>)[postsName].likes).toBeGreaterThan(10);
     }
   });
 
@@ -208,8 +209,8 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
     // age > 24 → u1, u2, u3; combined with likes > 10 → p1, p3, p4
     expect(rows).toHaveLength(3);
     for (const row of rows) {
-      expect(row.users.age).toBeGreaterThan(24);
-      expect(row.posts.likes).toBeGreaterThan(10);
+      expect((row as Record<string, any>)[usersName].age).toBeGreaterThan(24);
+      expect((row as Record<string, any>)[postsName].likes).toBeGreaterThan(10);
     }
   });
 
@@ -276,7 +277,7 @@ describe.skipIf(!hasCredentials())('Query builder JOINs (e2e)', () => {
 
     // Dan has no posts; LEFT JOIN keeps him with null posts
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.users.id).toBe('u4');
-    expect(rows[0]!.posts).toBeNull();
+    expect((rows[0] as Record<string, any>)[usersName].id).toBe('u4');
+    expect((rows[0] as Record<string, any>)[postsName]).toBeNull();
   });
 });

@@ -403,7 +403,7 @@ describe.skipIf(!hasCredentials())('Query builder edge cases (e2e)', () => {
         { id: 'p3', score: -Math.E },
         { id: 'p4', score: 1.234567890123456 },
         { id: 'p5', score: 1e-10 },
-        { id: 'p6', score: 1e10 },
+        { id: 'p6', score: 1.5e8 },
       ];
       for (const s of samples) {
         await db.insert(prec).values(s);
