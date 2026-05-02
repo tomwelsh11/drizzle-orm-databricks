@@ -10,6 +10,12 @@ describe('DatabricksDialect', () => {
     expect(dialect.escapeName('table_name')).toBe('`table_name`');
   });
 
+  it('escapes backticks inside identifiers', () => {
+    const dialect = new DatabricksDialect();
+    expect(dialect.escapeName('col`name')).toBe('`col``name`');
+    expect(dialect.escapeName('a`b`c')).toBe('`a``b``c`');
+  });
+
   it('escapes parameters as positional placeholders', () => {
     const dialect = new DatabricksDialect();
     expect(dialect.escapeParam(0, 'value')).toBe('?');
