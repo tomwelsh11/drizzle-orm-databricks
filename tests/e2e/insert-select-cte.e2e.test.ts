@@ -98,15 +98,20 @@ describe.skipIf(!hasCredentials())("INSERT...SELECT and WITH (CTE) on DML (e2e)"
     await db.execute(sql.raw(`DELETE FROM ${bt(archiveName)}`));
     await db.insert(archiveTable).select(db.select().from(sourceTable));
 
-    const seniors = db
-      .$with("seniors")
-      .as(db.select().from(archiveTable).where(gt(archiveTable.age, 60)));
+    // Use sql.raw in CTE to avoid ordinal parameter binding issues
+    // across CTE + DML boundaries on Databricks
+    const seniors = db.$with("seniors").as(
+      db
+        .select()
+        .from(archiveTable)
+        .where(sql.raw(`${bt("age")} > 60`)),
+    );
 
     await db
       .with(seniors)
       .update(archiveTable)
       .set({ active: false })
-      .where(eq(archiveTable.id, "u3"));
+      .where(sql.raw(`${bt("id")} = 'u3'`));
 
     const rows = await db.select().from(archiveTable).where(eq(archiveTable.id, "u3"));
     expect(rows[0]?.active).toBe(false);
@@ -117,11 +122,18 @@ describe.skipIf(!hasCredentials())("INSERT...SELECT and WITH (CTE) on DML (e2e)"
     await db.execute(sql.raw(`DELETE FROM ${bt(archiveName)}`));
     await db.insert(archiveTable).select(db.select().from(sourceTable));
 
-    const minors = db
-      .$with("minors")
-      .as(db.select().from(archiveTable).where(eq(archiveTable.id, "u2")));
+    // Use sql.raw in CTE to avoid ordinal parameter binding issues
+    const minors = db.$with("minors").as(
+      db
+        .select()
+        .from(archiveTable)
+        .where(sql.raw(`${bt("id")} = 'u2'`)),
+    );
 
-    await db.with(minors).delete(archiveTable).where(eq(archiveTable.id, "u2"));
+    await db
+      .with(minors)
+      .delete(archiveTable)
+      .where(sql.raw(`${bt("id")} = 'u2'`));
 
     const rows = await db.select().from(archiveTable);
     expect(rows.map((r) => r.id).sort()).toEqual(["u1", "u3"]);
