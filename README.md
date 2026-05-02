@@ -288,14 +288,27 @@ Tested on Node 22 and 24.
 
 ## Roadmap
 
+### Near-term
+
+- [ ] `INSERT INTO ... SELECT` — compose inserts from subqueries (supported since drizzle-orm 0.36.3)
+- [ ] `WITH` (CTEs) on DML — use CTEs with INSERT, UPDATE, DELETE (supported since drizzle-orm 0.39.0)
+- [ ] `CROSS JOIN` support (supported since drizzle-orm 0.43.0)
+- [ ] `DrizzleQueryError` wrapper — surface SQL string, params, and stack traces on driver errors (available since drizzle-orm 0.44.0)
+- [ ] `bigint`/`number` modes for `decimal` columns (available since drizzle-orm 0.41.0)
+
+### Medium-term
+
 - [ ] Relational queries (`db.query` API with `with` relations)
-- [ ] drizzle-kit integration (schema push, introspection, migration generation)
-- [ ] `RETURNING` emulation (SELECT-after-write for single-row inserts)
 - [ ] Prepared statements
-- [ ] Connection pooling and multi-session support
 - [ ] `MERGE INTO` (Databricks upsert)
-- [ ] Databricks `IDENTITY` column support
+- [ ] `RETURNING` emulation (SELECT-after-write for single-row inserts)
+- [ ] Connection pooling and multi-session support
+
+### Long-term
+
+- [ ] drizzle-kit integration (schema push, introspection, migration generation)
 - [ ] `ARRAY`, `MAP`, and `STRUCT` column types
+- [ ] Databricks `IDENTITY` column support
 
 ## Testing
 
@@ -308,7 +321,7 @@ pnpm test:coverage # v8 coverage report
 pnpm build         # ESM + CJS + DTS (vite+)
 ```
 
-CI runs unit tests on Node 18/20/22/24 and E2E tests against a live Databricks warehouse using service principal authentication.
+CI runs unit tests on Node 22/24 and E2E tests against a live Databricks warehouse using service principal authentication.
 
 ## License
 
