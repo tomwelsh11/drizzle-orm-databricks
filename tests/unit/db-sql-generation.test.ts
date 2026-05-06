@@ -243,6 +243,21 @@ describe("db.select() SQL generation", () => {
     expect(mockClient.recorded[0]!.sql).toBe("select count(*) as `cnt` from `users`");
   });
 
+  it("db.select() with raw sql (no .as()) still aliases using the field key", async () => {
+    const { db, mockClient } = createDbWithRows([]);
+    await db
+      .select({
+        feederId: users.id,
+        totalCount: sql<number>`count(*)`,
+        sumAge: sql<number>`sum(${users.age})`,
+      })
+      .from(users)
+      .groupBy(users.id);
+    expect(mockClient.recorded[0]!.sql).toBe(
+      "select `id`, count(*) as `totalCount`, sum(`age`) as `sumAge` from `users` group by `users`.`id`",
+    );
+  });
+
   it("db.select().from().groupBy() generates GROUP BY", async () => {
     const { db, mockClient } = createDbWithRows([]);
     await db

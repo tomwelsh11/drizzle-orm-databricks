@@ -1,6 +1,6 @@
 {
   "name": "drizzle-orm-databricks",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Databricks SQL adapter for Drizzle ORM",
   "keywords": [
     "adapter",

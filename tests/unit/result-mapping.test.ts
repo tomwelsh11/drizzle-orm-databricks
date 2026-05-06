@@ -72,6 +72,22 @@ describe("Result mapping", () => {
     expect(rows).toEqual([{ name: null }]);
   });
 
+  it("maps raw sql expressions using their aliased key names", async () => {
+    const mockClient = new MockDBSQLClient();
+    mockClient.queueResponse([{ id: "f1", totalCount: 5, sumAge: 150 }]);
+    const db = drizzle({ client: mockClient as never });
+
+    const rows = await db
+      .select({
+        feederId: users.id,
+        totalCount: sql<number>`count(*)`,
+        sumAge: sql<number>`sum(${users.age})`,
+      })
+      .from(users)
+      .groupBy(users.id);
+    expect(rows).toEqual([{ feederId: "f1", totalCount: 5, sumAge: 150 }]);
+  });
+
   it("maps boolean false (not null/0)", async () => {
     const mockClient = new MockDBSQLClient();
     mockClient.queueResponse([{ id: "u1", name: "Alice", age: 30, active: false }]);
