@@ -96,7 +96,7 @@ export class DatabricksDialect {
     { isSingleTable = false }: { isSingleTable?: boolean } = {},
   ): SQL {
     const columnsLen = fields.length;
-    const chunks: unknown[] = fields.flatMap(({ field }, i) => {
+    const chunks: unknown[] = fields.flatMap(({ field, path }, i) => {
       const chunk: unknown[] = [];
 
       if (is(field, SQL.Aliased) && (field as any).isSelectionField) {
@@ -119,6 +119,9 @@ export class DatabricksDialect {
         }
         if (is(field, SQL.Aliased)) {
           chunk.push(sql` as ${sql.identifier(field.fieldAlias)}`);
+        } else {
+          const alias = path[path.length - 1]!;
+          chunk.push(sql` as ${sql.identifier(alias)}`);
         }
       } else if (is(field, Column)) {
         if (isSingleTable) {
