@@ -45,6 +45,13 @@ function createDb() {
   return { db, mockClient };
 }
 
+function createAnsiDb() {
+  const mockClient = new MockDBSQLClient();
+  mockClient.queueResponse([]);
+  const db = drizzle({ client: mockClient as never, mode: "ansi" });
+  return { db, mockClient };
+}
+
 function createDbWithRows(rows: Record<string, unknown>[]) {
   const mockClient = new MockDBSQLClient();
   mockClient.queueResponse(rows);
@@ -434,5 +441,46 @@ describe("db.select() with JOINs SQL generation", () => {
     expect(s).toContain("inner join");
     expect(s).toContain("where");
     expect(mockClient.recorded[0]!.params).toEqual([10]);
+  });
+});
+
+describe("ANSI SQL mode", () => {
+  it("uses double-quoted identifiers in select", async () => {
+    const { db, mockClient } = createAnsiDb();
+    await db.select().from(users);
+    expect(mockClient.recorded[0]!.sql).toBe(
+      'select "id", "name", "age", "active", "score" from "users"',
+    );
+  });
+
+  it("uses double-quoted identifiers in where clause", async () => {
+    const { db, mockClient } = createAnsiDb();
+    await db.select().from(users).where(eq(users.id, "u1"));
+    expect(mockClient.recorded[0]!.sql).toBe(
+      'select "id", "name", "age", "active", "score" from "users" where "users"."id" = ?',
+    );
+  });
+
+  it("uses double-quoted identifiers for join aliases", async () => {
+    const { db, mockClient } = createAnsiDb();
+    await db.select().from(users).innerJoin(posts, eq(users.id, posts.userId));
+    const s = mockClient.recorded[0]!.sql;
+    expect(s).toContain('"users"."id"');
+    expect(s).toContain('"users__id"');
+    expect(s).toContain('"posts__id"');
+  });
+
+  it("escapes double quotes inside identifiers", async () => {
+    const { DatabricksDialect } = await import("../../src/dialect");
+    const dialect = new DatabricksDialect({ mode: "ansi" });
+    expect(dialect.escapeName('a"b')).toBe('"a""b"');
+  });
+
+  it("default mode still uses backticks", async () => {
+    const { DatabricksDialect } = await import("../../src/dialect");
+    const dialect = new DatabricksDialect();
+    expect(dialect.escapeName("col")).toBe("`col`");
+    const dialectExplicit = new DatabricksDialect({ mode: "default" });
+    expect(dialectExplicit.escapeName("col")).toBe("`col`");
   });
 });
