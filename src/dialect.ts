@@ -21,11 +21,8 @@ const TableSymbol = (Table as any).Symbol as {
   IsAlias: symbol;
 };
 
-export type IdentifierQuoteStyle = "backtick" | "ansi";
-
 export interface DatabricksDialectConfig {
   casing?: Casing;
-  identifierQuote?: IdentifierQuoteStyle;
 }
 
 type FieldMapping = {
@@ -38,19 +35,14 @@ export class DatabricksDialect {
 
   /** @internal */
   casing: CasingCache;
-  private quoteStyle: IdentifierQuoteStyle;
 
   constructor(config?: DatabricksDialectConfig) {
     this.casing = new CasingCache(config?.casing);
-    this.quoteStyle = config?.identifierQuote ?? "backtick";
   }
 
-  escapeName = (name: string): string => {
-    if (this.quoteStyle === "ansi") {
-      return `"${name.replace(/"/g, '""')}"`;
-    }
+  escapeName(name: string): string {
     return `\`${name.replace(/`/g, "``")}\``;
-  };
+  }
 
   escapeParam(_num: number, _value: unknown): string {
     return "?";

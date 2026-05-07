@@ -6,7 +6,7 @@ import { SelectionProxyHandler } from "drizzle-orm/selection-proxy";
 import { Subquery, WithSubquery } from "drizzle-orm/subquery";
 
 import { SessionManager } from "./connection";
-import { DatabricksDialect, type IdentifierQuoteStyle } from "./dialect";
+import { DatabricksDialect } from "./dialect";
 import {
   DatabricksDeleteBase,
   DatabricksInsertBuilder,
@@ -26,7 +26,6 @@ import type {
 
 export interface DatabricksDriverOptions {
   pool?: SessionPoolOptions;
-  identifierQuote?: IdentifierQuoteStyle;
 }
 
 export class DatabricksDatabase<TSchema extends Record<string, unknown> = Record<string, never>> {
@@ -185,8 +184,7 @@ export function drizzle<TSchema extends Record<string, unknown> = Record<string,
   config: DatabricksConfig & DatabricksDriverOptions,
   drizzleConfig: DrizzleConfig<TSchema> = {},
 ): DatabricksDatabase<TSchema> {
-  const { pool: poolOptions, identifierQuote, ...connectionConfig } = config;
-  const dialect = new DatabricksDialect({ casing: drizzleConfig.casing, identifierQuote });
+  const dialect = new DatabricksDialect({ casing: drizzleConfig.casing });
 
   let logger;
   if (drizzleConfig.logger === true) {
@@ -195,6 +193,7 @@ export function drizzle<TSchema extends Record<string, unknown> = Record<string,
     logger = drizzleConfig.logger;
   }
 
+  const { pool: poolOptions, ...connectionConfig } = config;
   let executor: SessionExecutor;
   let close: () => Promise<void>;
 
