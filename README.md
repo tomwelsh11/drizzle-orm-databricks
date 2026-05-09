@@ -1,5 +1,9 @@
 # drizzle-orm-databricks
 
+[![npm version](https://img.shields.io/npm/v/drizzle-orm-databricks.svg)](https://www.npmjs.com/package/drizzle-orm-databricks)
+[![npm downloads](https://img.shields.io/npm/dm/drizzle-orm-databricks.svg)](https://www.npmjs.com/package/drizzle-orm-databricks)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A standalone [Drizzle ORM](https://orm.drizzle.team) adapter for [Databricks SQL](https://www.databricks.com/product/databricks-sql) warehouses. Built from Drizzle's base abstractions — **zero dependency on `mysql-core`, `pg-core`, or `sqlite-core`** — with Databricks-native column types, Spark SQL generation, and the official `@databricks/sql` Node.js driver.
 
 ## Installation

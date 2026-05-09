@@ -5,10 +5,17 @@
   "keywords": [
     "adapter",
     "databricks",
+    "databricks-sql",
+    "database",
+    "data-engineering",
     "drizzle",
     "drizzle-orm",
+    "driver",
     "orm",
-    "sql"
+    "query-builder",
+    "spark-sql",
+    "sql",
+    "typescript"
   ],
   "homepage": "https://github.com/tomwelsh11/drizzle-orm-databricks#readme",
   "bugs": {
