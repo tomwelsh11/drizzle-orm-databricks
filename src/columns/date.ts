@@ -7,7 +7,9 @@ import { DatabricksColumn, DatabricksColumnBuilder } from "./common";
 export class DatabricksDateBuilder extends DatabricksColumnBuilder<
   ColumnBuilderBaseConfig<"date", "DatabricksDate">
 > {
-  static { (this as any)[entityKind] = "DatabricksDateBuilder"; }
+  static {
+    (this as any)[entityKind] = "DatabricksDateBuilder";
+  }
 
   constructor(name: string) {
     super(name, "date", "DatabricksDate");
@@ -19,7 +21,9 @@ export class DatabricksDateBuilder extends DatabricksColumnBuilder<
 }
 
 export class DatabricksDate extends DatabricksColumn<ColumnBaseConfig<"date", "DatabricksDate">> {
-  static { (this as any)[entityKind] = "DatabricksDate"; }
+  static {
+    (this as any)[entityKind] = "DatabricksDate";
+  }
 
   getSQLType(): string {
     return "DATE";

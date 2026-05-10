@@ -7,7 +7,9 @@ import { DatabricksColumn, DatabricksColumnBuilder } from "./common";
 export class DatabricksFloatBuilder extends DatabricksColumnBuilder<
   ColumnBuilderBaseConfig<"number", "DatabricksFloat">
 > {
-  static { (this as any)[entityKind] = "DatabricksFloatBuilder"; }
+  static {
+    (this as any)[entityKind] = "DatabricksFloatBuilder";
+  }
 
   constructor(name: string) {
     super(name, "number", "DatabricksFloat");
@@ -21,7 +23,9 @@ export class DatabricksFloatBuilder extends DatabricksColumnBuilder<
 export class DatabricksFloat extends DatabricksColumn<
   ColumnBaseConfig<"number", "DatabricksFloat">
 > {
-  static { (this as any)[entityKind] = "DatabricksFloat"; }
+  static {
+    (this as any)[entityKind] = "DatabricksFloat";
+  }
 
   getSQLType(): string {
     return "FLOAT";

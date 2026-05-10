@@ -27,7 +27,9 @@ export abstract class DatabricksColumnBuilder<
   TTypeConfig extends object = object,
   TExtraConfig extends ColumnBuilderExtraConfig = ColumnBuilderExtraConfig,
 > extends ColumnBuilder<T, TRuntimeConfig, TTypeConfig, TExtraConfig> {
-  static { (this as any)[entityKind] = "DatabricksColumnBuilder"; }
+  static {
+    (this as any)[entityKind] = "DatabricksColumnBuilder";
+  }
 
   unique(name?: string): this {
     this.config.isUnique = true;
@@ -55,7 +57,9 @@ export abstract class DatabricksColumn<
   TRuntimeConfig extends object = object,
   TTypeConfig extends object = object,
 > extends Column<T, TRuntimeConfig, TTypeConfig> {
-  static { (this as any)[entityKind] = "DatabricksColumn"; }
+  static {
+    (this as any)[entityKind] = "DatabricksColumn";
+  }
 
   constructor(
     override readonly table: Table,

@@ -8,7 +8,9 @@ export class DatabricksCharBuilder extends DatabricksColumnBuilder<
   ColumnBuilderBaseConfig<"string", "DatabricksChar">,
   { length: number; enum?: string[] }
 > {
-  static { (this as any)[entityKind] = "DatabricksCharBuilder"; }
+  static {
+    (this as any)[entityKind] = "DatabricksCharBuilder";
+  }
 
   constructor(name: string, config: { length: number; enum?: string[] }) {
     super(name, "string", "DatabricksChar");
@@ -25,7 +27,9 @@ export class DatabricksChar extends DatabricksColumn<
   ColumnBaseConfig<"string", "DatabricksChar">,
   { length: number; enum?: string[] }
 > {
-  static { (this as any)[entityKind] = "DatabricksChar"; }
+  static {
+    (this as any)[entityKind] = "DatabricksChar";
+  }
 
   readonly length: number | undefined = (this.config as any).length;
   override readonly enumValues: string[] | undefined = (this.config as any).enum;

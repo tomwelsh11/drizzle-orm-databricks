@@ -7,6 +7,7 @@ import {
   isOAuthConfig,
   type DatabricksConfig,
   type DatabricksConnectionConfig,
+  type DatabricksSqlSession,
 } from "./types";
 
 interface ResolvedSessionOptions {
@@ -47,7 +48,7 @@ export class SessionManager {
     return this.session;
   }
 
-  async runWithRetry<T>(fn: (session: IDBSQLSession) => Promise<T>): Promise<T> {
+  async runWithRetry<T>(fn: (session: DatabricksSqlSession) => Promise<T>): Promise<T> {
     const session = await this.getSession();
     try {
       return await fn(session);

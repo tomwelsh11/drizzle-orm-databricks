@@ -17,7 +17,9 @@ const { mapUpdateSet } = require("drizzle-orm/utils") as {
 };
 
 export class DatabricksUpdateBuilder<TTable extends DatabricksTable<any>> {
-  static { (this as any)[entityKind] = "DatabricksUpdateBuilder"; }
+  static {
+    (this as any)[entityKind] = "DatabricksUpdateBuilder";
+  }
 
   constructor(
     private table: TTable,
@@ -40,7 +42,9 @@ export class DatabricksUpdateBuilder<TTable extends DatabricksTable<any>> {
 }
 
 export class DatabricksUpdateBase<TTable extends DatabricksTable<any>> extends QueryPromise<void> {
-  static { (this as any)[entityKind] = "DatabricksUpdate"; }
+  static {
+    (this as any)[entityKind] = "DatabricksUpdate";
+  }
 
   config: {
     set: Record<string, unknown>;

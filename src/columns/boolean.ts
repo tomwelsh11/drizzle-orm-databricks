@@ -7,7 +7,9 @@ import { DatabricksColumn, DatabricksColumnBuilder } from "./common";
 export class DatabricksBooleanBuilder extends DatabricksColumnBuilder<
   ColumnBuilderBaseConfig<"boolean", "DatabricksBoolean">
 > {
-  static { (this as any)[entityKind] = "DatabricksBooleanBuilder"; }
+  static {
+    (this as any)[entityKind] = "DatabricksBooleanBuilder";
+  }
 
   constructor(name: string) {
     super(name, "boolean", "DatabricksBoolean");
@@ -21,7 +23,9 @@ export class DatabricksBooleanBuilder extends DatabricksColumnBuilder<
 export class DatabricksBoolean extends DatabricksColumn<
   ColumnBaseConfig<"boolean", "DatabricksBoolean">
 > {
-  static { (this as any)[entityKind] = "DatabricksBoolean"; }
+  static {
+    (this as any)[entityKind] = "DatabricksBoolean";
+  }
 
   getSQLType(): string {
     return "BOOLEAN";

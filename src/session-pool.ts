@@ -10,6 +10,7 @@ import {
   isOAuthConfig,
   type DatabricksConfig,
   type DatabricksConnectionConfig,
+  type DatabricksSqlSession,
 } from "./types";
 
 export const DEFAULT_SESSION_MAX_AGE_MS = 30 * 60 * 1000;
@@ -32,7 +33,7 @@ interface ResolvedSessionOptions {
 }
 
 /**
- * Pools `IDBSQLSession` instances backed by a single shared `DBSQLClient`.
+ * Pools Databricks SQL sessions backed by a single shared `DBSQLClient`.
  * Sessions are validated by age (older than `sessionMaxAgeMs` are evicted).
  */
 export class SessionPool {
@@ -85,29 +86,29 @@ export class SessionPool {
     return this.pool.inUse;
   }
 
-  async acquire(): Promise<IDBSQLSession> {
+  async acquire(): Promise<DatabricksSqlSession> {
     const entry = await this.pool.acquire();
     return entry.session;
   }
 
-  async release(session: IDBSQLSession): Promise<void> {
-    const entry = this.entryBySession.get(session);
+  async release(session: DatabricksSqlSession): Promise<void> {
+    const entry = this.entryBySession.get(session as IDBSQLSession);
     if (!entry) return;
     await this.pool.release(entry);
   }
 
-  async invalidate(session: IDBSQLSession): Promise<void> {
-    const entry = this.entryBySession.get(session);
+  async invalidate(session: DatabricksSqlSession): Promise<void> {
+    const entry = this.entryBySession.get(session as IDBSQLSession);
     if (!entry) return;
     entry.createdAt = 0;
     await this.pool.release(entry);
   }
 
-  async withSession<T>(fn: (session: IDBSQLSession) => Promise<T>): Promise<T> {
+  async withSession<T>(fn: (session: DatabricksSqlSession) => Promise<T>): Promise<T> {
     return this.runWithRetry(fn);
   }
 
-  async runWithRetry<T>(fn: (session: IDBSQLSession) => Promise<T>): Promise<T> {
+  async runWithRetry<T>(fn: (session: DatabricksSqlSession) => Promise<T>): Promise<T> {
     const session = await this.acquire();
     let stale = false;
     try {

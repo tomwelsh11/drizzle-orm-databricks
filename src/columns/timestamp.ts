@@ -10,7 +10,9 @@ export class DatabricksTimestampBuilder extends DatabricksColumnBuilder<
   ColumnBuilderBaseConfig<"date", "DatabricksTimestamp">,
   { sqlName: TimestampSqlName }
 > {
-  static { (this as any)[entityKind] = "DatabricksTimestampBuilder"; }
+  static {
+    (this as any)[entityKind] = "DatabricksTimestampBuilder";
+  }
 
   constructor(name: string, sqlName: TimestampSqlName) {
     super(name, "date", "DatabricksTimestamp");
@@ -26,7 +28,9 @@ export class DatabricksTimestamp extends DatabricksColumn<
   ColumnBaseConfig<"date", "DatabricksTimestamp">,
   { sqlName: TimestampSqlName }
 > {
-  static { (this as any)[entityKind] = "DatabricksTimestamp"; }
+  static {
+    (this as any)[entityKind] = "DatabricksTimestamp";
+  }
 
   readonly sqlName: TimestampSqlName = (this.config as any).sqlName;
 

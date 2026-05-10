@@ -13,7 +13,9 @@ import type { DatabricksTable, NamespaceOverride } from "../table";
 const TableSymbol = (Table as any).Symbol as { Columns: symbol };
 
 export class DatabricksDeleteBase<TTable extends DatabricksTable<any>> extends QueryPromise<void> {
-  static { (this as any)[entityKind] = "DatabricksDelete"; }
+  static {
+    (this as any)[entityKind] = "DatabricksDelete";
+  }
 
   config: {
     table: TTable;

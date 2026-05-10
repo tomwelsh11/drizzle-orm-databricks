@@ -7,7 +7,9 @@ import { DatabricksDialect } from "../dialect";
 import { DatabricksSelectBuilder } from "./select";
 
 export class DatabricksQueryBuilder {
-  static { (this as any)[entityKind] = "DatabricksQueryBuilder"; }
+  static {
+    (this as any)[entityKind] = "DatabricksQueryBuilder";
+  }
 
   private dialect: DatabricksDialect;
 

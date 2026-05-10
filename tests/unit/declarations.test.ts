@@ -35,4 +35,18 @@ describe("Declaration file output", () => {
       );
     }
   });
+
+  it("does not import from @databricks/sql internal paths", () => {
+    const dtsFiles = readdirSync(DIST_DIR).filter(
+      (f) => f.endsWith(".d.mts") || f.endsWith(".d.cts"),
+    );
+
+    for (const file of dtsFiles) {
+      const content = readFileSync(join(DIST_DIR, file), "utf-8");
+      expect(content, `${file} should not import from @databricks/sql/dist`).not.toContain(
+        "@databricks/sql/dist",
+      );
+      expect(content, `${file} should not reference IDBSQLSession`).not.toContain("IDBSQLSession");
+    }
+  });
 });

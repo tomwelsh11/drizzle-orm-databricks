@@ -1,5 +1,18 @@
 import type { DBSQLClient } from "@databricks/sql";
 
+export interface DatabricksSqlOperation {
+  fetchAll(): Promise<Array<object>>;
+  close(): Promise<unknown>;
+}
+
+export interface DatabricksSqlSession {
+  executeStatement(
+    statement: string,
+    options?: { ordinalParameters?: unknown[] },
+  ): Promise<DatabricksSqlOperation>;
+  close(): Promise<unknown>;
+}
+
 export interface DatabricksTokenConnectionConfig {
   host: string;
   path: string;

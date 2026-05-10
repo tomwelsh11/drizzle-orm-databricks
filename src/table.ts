@@ -16,7 +16,9 @@ export interface NamespaceOverride {
 export type DatabricksTableConfig = TableConfig<DatabricksColumn>;
 
 export class DatabricksTable<T extends TableConfig = TableConfig> extends Table<T> {
-  static { (this as any)[entityKind] = "DatabricksTable"; }
+  static {
+    (this as any)[entityKind] = "DatabricksTable";
+  }
 
   declare protected $columns: T["columns"];
 }

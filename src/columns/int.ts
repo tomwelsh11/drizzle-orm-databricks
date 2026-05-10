@@ -7,7 +7,9 @@ import { DatabricksColumn, DatabricksColumnBuilder } from "./common";
 export class DatabricksIntBuilder extends DatabricksColumnBuilder<
   ColumnBuilderBaseConfig<"number", "DatabricksInt">
 > {
-  static { (this as any)[entityKind] = "DatabricksIntBuilder"; }
+  static {
+    (this as any)[entityKind] = "DatabricksIntBuilder";
+  }
 
   constructor(name: string) {
     super(name, "number", "DatabricksInt");
@@ -19,7 +21,9 @@ export class DatabricksIntBuilder extends DatabricksColumnBuilder<
 }
 
 export class DatabricksInt extends DatabricksColumn<ColumnBaseConfig<"number", "DatabricksInt">> {
-  static { (this as any)[entityKind] = "DatabricksInt"; }
+  static {
+    (this as any)[entityKind] = "DatabricksInt";
+  }
 
   getSQLType(): string {
     return "INT";
