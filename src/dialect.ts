@@ -31,7 +31,9 @@ type FieldMapping = {
 }[];
 
 export class DatabricksDialect {
-  static readonly [entityKind]: string = "DatabricksDialect";
+  static {
+    (this as any)[entityKind] = "DatabricksDialect";
+  }
 
   /** @internal */
   casing: CasingCache;

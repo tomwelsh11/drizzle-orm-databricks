@@ -1,8 +1,11 @@
 import { eq, sql } from "drizzle-orm";
-import { entityKind } from "drizzle-orm/entity";
+import { entityKind, is } from "drizzle-orm/entity";
 import { describe, expect, it, vi } from "vitest";
 
 import { DatabricksDatabase, drizzle } from "../../src/driver";
+import { DatabricksDialect } from "../../src/dialect";
+import { DatabricksSession, DatabricksPreparedQuery } from "../../src/session";
+import { DatabricksTable } from "../../src/table";
 import { databricksTable, string, int, boolean } from "../../src";
 import { MockDBSQLClient } from "../mocks/databricks-sql";
 
@@ -73,6 +76,14 @@ describe("DatabricksDatabase", () => {
     expect((DatabricksDatabase as unknown as Record<symbol, string>)[entityKind]).toBe(
       "DatabricksDatabase",
     );
+  });
+
+  it("is recognized by drizzle-orm is() after static block entityKind assignment", () => {
+    const mockClient = new MockDBSQLClient();
+    const db = drizzle({ client: mockClient as never });
+    expect(is(db, DatabricksDatabase)).toBe(true);
+    expect(is(db.dialect, DatabricksDialect)).toBe(true);
+    expect(is(db.session, DatabricksSession)).toBe(true);
   });
 
   it("db.select().from() executes and maps results", async () => {

@@ -1,4 +1,3 @@
-import type IDBSQLSession from "@databricks/sql/dist/contracts/IDBSQLSession";
 import { Column } from "drizzle-orm/column";
 import { entityKind, is } from "drizzle-orm/entity";
 import { DrizzleQueryError } from "drizzle-orm/errors";
@@ -8,9 +7,10 @@ import { fillPlaceholders, SQL, type Query } from "drizzle-orm/sql";
 
 import type { DatabricksDialect } from "./dialect";
 import { DatabricksUnsupportedError } from "./errors";
+import type { DatabricksSqlSession } from "./types";
 
 export interface SessionExecutor {
-  runWithRetry<T>(fn: (session: IDBSQLSession) => Promise<T>): Promise<T>;
+  runWithRetry<T>(fn: (session: DatabricksSqlSession) => Promise<T>): Promise<T>;
 }
 
 type FieldMapping = {
@@ -65,7 +65,9 @@ export interface DatabricksSessionOptions {
 }
 
 export class DatabricksPreparedQuery {
-  static readonly [entityKind]: string = "DatabricksPreparedQuery";
+  static {
+    (this as any)[entityKind] = "DatabricksPreparedQuery";
+  }
 
   constructor(
     private connection: SessionExecutor,
@@ -126,7 +128,9 @@ export class DatabricksPreparedQuery {
 }
 
 export class DatabricksSession {
-  static readonly [entityKind]: string = "DatabricksSession";
+  static {
+    (this as any)[entityKind] = "DatabricksSession";
+  }
 
   private logger: Logger;
 

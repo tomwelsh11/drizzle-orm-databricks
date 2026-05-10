@@ -15,6 +15,8 @@ export type {
   DatabricksTokenConnectionConfig,
   DatabricksOAuthConnectionConfig,
   DatabricksClientConfig,
+  DatabricksSqlSession,
+  DatabricksSqlOperation,
 } from "./types";
 
 export { databricksTable, databricksSchema, databricksCatalog, DatabricksTable } from "./table";

@@ -7,7 +7,9 @@ import { DatabricksColumn, DatabricksColumnBuilder } from "./common";
 export class DatabricksTinyIntBuilder extends DatabricksColumnBuilder<
   ColumnBuilderBaseConfig<"number", "DatabricksTinyInt">
 > {
-  static override readonly [entityKind] = "DatabricksTinyIntBuilder";
+  static {
+    (this as any)[entityKind] = "DatabricksTinyIntBuilder";
+  }
 
   constructor(name: string) {
     super(name, "number", "DatabricksTinyInt");
@@ -21,7 +23,9 @@ export class DatabricksTinyIntBuilder extends DatabricksColumnBuilder<
 export class DatabricksTinyInt extends DatabricksColumn<
   ColumnBaseConfig<"number", "DatabricksTinyInt">
 > {
-  static override readonly [entityKind] = "DatabricksTinyInt";
+  static {
+    (this as any)[entityKind] = "DatabricksTinyInt";
+  }
 
   getSQLType(): string {
     return "TINYINT";
