@@ -29,7 +29,9 @@ export interface DatabricksDriverOptions {
 }
 
 export class DatabricksDatabase<TSchema extends Record<string, unknown> = Record<string, never>> {
-  static { (this as any)[entityKind] = "DatabricksDatabase"; }
+  static {
+    (this as any)[entityKind] = "DatabricksDatabase";
+  }
 
   constructor(
     /** @internal */
