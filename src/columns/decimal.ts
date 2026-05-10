@@ -12,7 +12,7 @@ export interface DatabricksDecimalConfig {
 export class DatabricksDecimalBuilder extends DatabricksColumnBuilder<
   ColumnBuilderBaseConfig<"string", "DatabricksDecimal">
 > {
-  static override readonly [entityKind] = "DatabricksDecimalBuilder";
+  static { (this as any)[entityKind] = "DatabricksDecimalBuilder"; }
 
   readonly precision: number;
   readonly scale: number;
@@ -33,7 +33,7 @@ export class DatabricksDecimalBuilder extends DatabricksColumnBuilder<
 export class DatabricksDecimal extends DatabricksColumn<
   ColumnBaseConfig<"string", "DatabricksDecimal">
 > {
-  static override readonly [entityKind] = "DatabricksDecimal";
+  static { (this as any)[entityKind] = "DatabricksDecimal"; }
 
   readonly precision: number = (this.config as any).precision ?? 10;
   readonly scale: number = (this.config as any).scale ?? 0;

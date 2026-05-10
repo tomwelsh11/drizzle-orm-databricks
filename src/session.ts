@@ -65,7 +65,7 @@ export interface DatabricksSessionOptions {
 }
 
 export class DatabricksPreparedQuery {
-  static readonly [entityKind]: string = "DatabricksPreparedQuery";
+  static { (this as any)[entityKind] = "DatabricksPreparedQuery"; }
 
   constructor(
     private connection: SessionExecutor,
@@ -126,7 +126,7 @@ export class DatabricksPreparedQuery {
 }
 
 export class DatabricksSession {
-  static readonly [entityKind]: string = "DatabricksSession";
+  static { (this as any)[entityKind] = "DatabricksSession"; }
 
   private logger: Logger;
 

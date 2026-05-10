@@ -14,7 +14,7 @@ import type { DatabricksTable, NamespaceOverride } from "../table";
 const TableSymbol = (Table as any).Symbol as { Columns: symbol };
 
 export class DatabricksInsertBuilder<TTable extends DatabricksTable<any>> {
-  static readonly [entityKind]: string = "DatabricksInsertBuilder";
+  static { (this as any)[entityKind] = "DatabricksInsertBuilder"; }
 
   constructor(
     private table: TTable,
@@ -82,7 +82,7 @@ export class DatabricksInsertBuilder<TTable extends DatabricksTable<any>> {
 }
 
 export class DatabricksInsertBase<TTable extends DatabricksTable<any>> extends QueryPromise<void> {
-  static override readonly [entityKind]: string = "DatabricksInsert";
+  static { (this as any)[entityKind] = "DatabricksInsert"; }
 
   config: {
     table: TTable;

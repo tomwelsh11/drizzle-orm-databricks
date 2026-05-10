@@ -7,7 +7,7 @@ import { DatabricksColumn, DatabricksColumnBuilder } from "./common";
 export class DatabricksVariantBuilder extends DatabricksColumnBuilder<
   ColumnBuilderBaseConfig<"json", "DatabricksVariant">
 > {
-  static override readonly [entityKind] = "DatabricksVariantBuilder";
+  static { (this as any)[entityKind] = "DatabricksVariantBuilder"; }
 
   constructor(name: string) {
     super(name, "json", "DatabricksVariant");
@@ -21,7 +21,7 @@ export class DatabricksVariantBuilder extends DatabricksColumnBuilder<
 export class DatabricksVariant extends DatabricksColumn<
   ColumnBaseConfig<"json", "DatabricksVariant">
 > {
-  static override readonly [entityKind] = "DatabricksVariant";
+  static { (this as any)[entityKind] = "DatabricksVariant"; }
 
   getSQLType(): string {
     return "VARIANT";

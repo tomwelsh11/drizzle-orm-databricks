@@ -30,7 +30,7 @@ const TableSymbol = (Table as any).Symbol as {
 };
 
 export class DatabricksSelectBuilder<TSelection extends Record<string, unknown> | undefined> {
-  static readonly [entityKind]: string = "DatabricksSelectBuilder";
+  static { (this as any)[entityKind] = "DatabricksSelectBuilder"; }
 
   private fields: TSelection;
   private session: DatabricksSession;
@@ -92,7 +92,7 @@ export class DatabricksSelectQueryBuilderBase<
   TResult = unknown,
   TSelectHKT extends Record<string, unknown> = Record<string, unknown>,
 > extends TypedQueryBuilder<TSelection, TResult> {
-  static override readonly [entityKind]: string = "DatabricksSelectQueryBuilder";
+  static { (this as any)[entityKind] = "DatabricksSelectQueryBuilder"; }
 
   declare _: { selectedFields: TSelection; result: TResult };
   config: any;
@@ -383,7 +383,7 @@ export class DatabricksSelectBase<
   TResult = unknown,
   TSelectHKT extends Record<string, unknown> = Record<string, unknown>,
 > extends DatabricksSelectQueryBuilderBase<TSelection, TResult, TSelectHKT> {
-  static override readonly [entityKind]: string = "DatabricksSelect";
+  static { (this as any)[entityKind] = "DatabricksSelect"; }
 
   prepare() {
     if (!this.session) {

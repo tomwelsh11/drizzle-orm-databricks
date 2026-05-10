@@ -7,7 +7,7 @@ import { DatabricksColumn, DatabricksColumnBuilder } from "./common";
 export class DatabricksStringBuilder extends DatabricksColumnBuilder<
   ColumnBuilderBaseConfig<"string", "DatabricksString">
 > {
-  static override readonly [entityKind] = "DatabricksStringBuilder";
+  static { (this as any)[entityKind] = "DatabricksStringBuilder"; }
 
   constructor(name: string) {
     super(name, "string", "DatabricksString");
@@ -21,7 +21,7 @@ export class DatabricksStringBuilder extends DatabricksColumnBuilder<
 export class DatabricksString extends DatabricksColumn<
   ColumnBaseConfig<"string", "DatabricksString">
 > {
-  static override readonly [entityKind] = "DatabricksString";
+  static { (this as any)[entityKind] = "DatabricksString"; }
 
   getSQLType(): string {
     return "STRING";
