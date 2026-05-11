@@ -9,6 +9,12 @@ import { getTableName, Table } from "drizzle-orm/table";
 import { getTableColumns, haveSameKeys } from "drizzle-orm/utils";
 import { ViewBaseConfig } from "drizzle-orm/view-common";
 
+import type {
+  GetSelectTableName,
+  GetSelectTableSelection,
+  SelectResult,
+} from "drizzle-orm/query-builders/select.types";
+
 import type { DatabricksDialect } from "../dialect";
 import type { DatabricksSession } from "../session";
 import type { DatabricksTable, NamespaceOverride } from "../table";
@@ -56,10 +62,18 @@ export class DatabricksSelectBuilder<TSelection extends Record<string, unknown> 
     this.distinct = config.distinct;
   }
 
-  from(
-    source: DatabricksTable<any> | Subquery | SQL | View,
+  from<TFrom extends DatabricksTable<any> | Subquery | SQL | View>(
+    source: TFrom,
     options?: NamespaceOverride,
-  ): DatabricksSelectBase<any, any, any> {
+  ): DatabricksSelectBase<
+    TSelection extends undefined ? GetSelectTableSelection<TFrom> : TSelection,
+    SelectResult<
+      TSelection extends undefined ? GetSelectTableSelection<TFrom> : TSelection,
+      TSelection extends undefined ? "single" : "partial",
+      GetSelectTableName<TFrom> extends string ? Record<GetSelectTableName<TFrom>, "not-null"> : {}
+    >[],
+    TSelection extends undefined ? GetSelectTableSelection<TFrom> : TSelection
+  > {
     const isPartialSelect = !!this.fields;
     let fields: Record<string, unknown>;
     if (this.fields) {
